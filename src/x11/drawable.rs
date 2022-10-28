@@ -91,7 +91,7 @@ where
     /// * `width` - The width of the drawable
     /// * `height` - The height of the drawable
     /// * `depth` - The bit-depth of the drawable
-    fn create_pixmap(&'a self, width: u32, height: u32, depth: u32) -> XPixmap<'a> {
+    fn create_pixmap(&self, width: u32, height: u32, depth: u32) -> XPixmap<'a> {
         let pixmap = unsafe {
             xlib_sys::XCreatePixmap(
                 self.display().handle(),

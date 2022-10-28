@@ -1,7 +1,8 @@
-use crate::{xlib_sys, XEvent, XFont};
+use crate::{xlib_sys, XBitmapPadding, XEvent, XFont, XImage, XImageFormat, XVisual};
 use crate::{XAtom, XLibError, XScreen};
 use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
+use std::num::NonZeroUsize;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(i32)]
@@ -224,6 +225,63 @@ impl XDisplay {
             let cstr = unsafe { CStr::from_ptr(val) };
             Some(cstr.to_str().unwrap())
         }
+    }
+
+    /// Creates a new image.
+    ///
+    /// # Arguments
+    ///
+    /// * `visual` - The visual to use backing the image
+    /// * `depth` - The depth of the image
+    /// * `format` - The format of the image
+    /// * `offset` - The offset in the data before the image starts
+    /// * `data` - The image data
+    /// * `width` - The width of the image
+    /// * `height` - The height of the image
+    /// * `bitmap_pad` - Bitmap padding describing the pixel padding
+    /// * `bytes_per_line` - Explicit setting of bytes per line, auto calculated if [`None`]
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_image<'a>(
+        &'a self,
+        visual: &XVisual,
+        depth: u32,
+        format: XImageFormat,
+        offset: u32,
+        data: &[u8],
+        width: u32,
+        height: u32,
+        bitmap_pad: XBitmapPadding,
+        bytes_per_line: Option<NonZeroUsize>,
+    ) -> XImage<'a> {
+        if let Some(bytes_per_line) = bytes_per_line {
+            let expected_bytes = (height * bytes_per_line.get() as u32) + offset;
+            assert_eq!(expected_bytes, data.len() as u32);
+        } else {
+            let bits = bitmap_pad as u32;
+
+            let expected_bytes = (height * width * (bits / 8)) + offset;
+            assert_eq!(expected_bytes, data.len() as u32);
+        }
+
+        let image = unsafe {
+            let data_malloced = libc::malloc(data.len() as _);
+            std::ptr::copy_nonoverlapping::<u8>(data.as_ptr(), data_malloced as _, data.len() as _);
+
+            xlib_sys::XCreateImage(
+                self.handle,
+                visual.handle(),
+                depth,
+                format as _,
+                offset as _,
+                data_malloced as _, // will be freed by X11
+                width as _,
+                height as _,
+                bitmap_pad as _,
+                bytes_per_line.map(|v| v.get()).unwrap_or(0) as _,
+            )
+        };
+
+        unsafe { XImage::new(image, self) }
     }
 }
 

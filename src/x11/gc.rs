@@ -1,4 +1,4 @@
-use crate::{xlib_sys, XFont};
+use crate::{xlib_sys, XFont, XImage};
 use crate::{XDisplay, XDrawable};
 
 /// A graphics context bound to a drawable.
@@ -105,6 +105,82 @@ where
                 text_bytes.len() as _,
             );
         }
+    }
+
+    /// Copies an image onto the target.
+    ///
+    /// # Arguments
+    ///
+    /// * `image` - The image to copy
+    /// * `src_x` - The x offset in the image to start copying from
+    /// * `src_y` - The y offset in the image to start copying from
+    /// * `dest_x` - The x offset in the drawable to start copying to
+    /// * `dest_y` - The y offset in the drawable to start copying to
+    /// * `width` - The width of the image to copy
+    /// * `height` - The height of the image to copy
+    #[allow(clippy::too_many_arguments)]
+    pub fn put_image(
+        &self,
+        image: &XImage,
+        src_x: i32,
+        src_y: i32,
+        dest_x: i32,
+        dest_y: i32,
+        width: u32,
+        height: u32,
+    ) {
+        unsafe {
+            xlib_sys::XPutImage(
+                self.display.handle(),
+                self.drawable.drawable_handle(),
+                self.handle,
+                image.handle(),
+                src_x,
+                src_y,
+                dest_x,
+                dest_y,
+                width,
+                height,
+            )
+        };
+    }
+
+    /// Copies another drawable onto the target.
+    ///
+    /// # Arguments
+    ///
+    /// * `src` - The drawable to copy
+    /// * `src_x` - The x offset in the drawable to start copying from
+    /// * `src_y` - The y offset in the drawable to start copying from
+    /// * `dest_x` - The x offset in the drawable to start copying to
+    /// * `dest_y` - The y offset in the drawable to start copying to
+    /// * `width` - The width of the drawable to copy
+    /// * `height` - The height of the drawable to copy
+    #[allow(clippy::too_many_arguments)]
+    pub fn copy_area<'b, D: XDrawable<'b>>(
+        &self,
+        src: &D,
+        src_x: i32,
+        src_y: i32,
+        dest_x: i32,
+        dest_y: i32,
+        width: u32,
+        height: u32,
+    ) {
+        unsafe {
+            xlib_sys::XCopyArea(
+                self.display.handle(),
+                src.drawable_handle(),
+                self.drawable.drawable_handle(),
+                self.handle,
+                src_x,
+                src_y,
+                width as _,
+                height as _,
+                dest_x as _,
+                dest_y as _,
+            )
+        };
     }
 
     /// Retrieves the underlying native X11 graphics context.
