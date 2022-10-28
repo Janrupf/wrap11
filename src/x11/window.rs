@@ -511,6 +511,14 @@ bitflags::bitflags! {
     }
 }
 
+bitflags::bitflags! {
+    /// Determines which cursor events are sent to the X11 client.
+    pub struct CursorInputMask: i64 {
+        /// The global cursor has changed.
+        const CURSOR_NOTIFY = xfixes_sys::XFixesDisplayCursorNotifyMask;
+    }
+}
+
 /// Represents a window on the X server.
 #[derive(Debug)]
 pub struct XWindow<'a> {
@@ -611,6 +619,13 @@ impl<'a> XWindow<'a> {
         unsafe { xlib_sys::XSelectInput(self.display.handle(), self.handle, mask.bits) };
     }
 
+    /// Selects the cursor input mask for the window
+    pub fn select_cursor_input(&self, mask: CursorInputMask) {
+        unsafe {
+            xfixes_sys::XFixesSelectCursorInput(self.display.handle(), self.handle, mask.bits as _)
+        }
+    }
+
     /// Store the name of the window.
     ///
     /// This is usually what gets displayed as the window title.
@@ -653,7 +668,7 @@ impl<'a> XWindow<'a> {
         let mut remaining_bytes = 0;
         let mut data = std::ptr::null_mut();
 
-        let delete = if delete { 1 } else { 0 };
+        let delete = i32::from(delete);
 
         unsafe {
             xlib_sys::XGetWindowProperty(

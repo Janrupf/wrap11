@@ -21,6 +21,7 @@ pub enum QueuedMode {
 #[derive(Debug)]
 pub struct XDisplay {
     handle: *mut xlib_sys::Display,
+    xfixes_event_base: i32,
 }
 
 impl XDisplay {
@@ -46,7 +47,17 @@ impl XDisplay {
             return Err(XLibError::OpenDisplayFailed(attempted_name));
         }
 
-        Ok(XDisplay { handle })
+        let mut xfixes_event_base = 0;
+        let mut xfixes_error_base = 0;
+
+        unsafe {
+            xfixes_sys::XFixesQueryExtension(handle, &mut xfixes_event_base, &mut xfixes_error_base)
+        };
+
+        Ok(XDisplay {
+            handle,
+            xfixes_event_base,
+        })
     }
 
     /// Retrieves the name of the display that [`xlib_sys::XOpenDisplay`] would attempt to use.
@@ -290,6 +301,11 @@ impl XDisplay {
     /// Retrieves the current cursor image.
     pub fn get_cursor_image(&self) -> XCursorImage {
         unsafe { XCursorImage::new(xfixes_sys::XFixesGetCursorImage(self.handle)) }
+    }
+
+    /// Retrieves the event base id for xfixes events.
+    pub fn xfixes_event_base(&self) -> i32 {
+        self.xfixes_event_base
     }
 }
 

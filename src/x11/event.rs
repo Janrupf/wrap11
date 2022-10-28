@@ -1,6 +1,6 @@
 use crate::{
-    xlib_sys, ColormapHandleOwnership, ColormapState, WindowHandleOwnership, XAtom, XColormap,
-    XDisplay, XWindow,
+    xfixes_sys, xlib_sys, ColormapHandleOwnership, ColormapState, WindowHandleOwnership, XAtom,
+    XColormap, XDisplay, XWindow,
 };
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -514,6 +514,12 @@ pub enum XEventData<'a> {
     /// is set.
     VisibilityChange(XVisibilityEvent),
 
+    /// The global cursor has changed.
+    ///
+    /// Only generated when [`CursorInputMask::CURSOR_NOTIFY`][crate::CursorInputMask::CURSOR_NOTIFY]
+    /// is set.
+    CursorChanged(XDisplayCursorEvent<'a>),
+
     /// An unknown event has occurred, this may be sent by X extension and can be handled
     /// using the raw structure if desired.
     Unknown(xlib_sys::XEvent),
@@ -600,6 +606,12 @@ impl<'a> XEventData<'a> {
             )),
             xlib_sys::VisibilityNotify => {
                 Self::VisibilityChange(XVisibilityEvent::new(event.visibility))
+            }
+            x if x == display.xfixes_event_base() + xfixes_sys::XFixesCursorNotify => {
+                Self::CursorChanged(XDisplayCursorEvent::new(
+                    event.xfixes_cursor_notify,
+                    display,
+                ))
             }
             _ => Self::Unknown(event),
         }
@@ -1929,7 +1941,7 @@ impl<'a> XSelectionRequestEvent<'a> {
         self.property
     }
 
-    /// Retrieves the timestampt this event occurred at.
+    /// Retrieves the timestamp this event occurred at.
     pub fn time(&self) -> u64 {
         self.time
     }
@@ -1955,5 +1967,73 @@ impl XVisibilityEvent {
     /// Retrieves the new visibility of the window.
     pub fn state(&self) -> VisibilityState {
         self.state
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum XDisplayCursorEventSubtype {
+    CursorNotify,
+}
+
+impl XDisplayCursorEventSubtype {
+    /// Wraps an existing X11 cursor event subtype.
+    ///
+    /// # Arguments
+    ///
+    /// * `subtype` - The native X11 cursor even subtype to wrap
+    pub fn new(subtype: i32) -> Self {
+        match subtype {
+            xfixes_sys::XFixesDisplayCursorNotify => Self::CursorNotify,
+            x => unreachable!("Invalid X cursor event subtype: {}", x),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct XDisplayCursorEvent<'a> {
+    subtype: XDisplayCursorEventSubtype,
+    cursor_serial: u64,
+    timestamp: u64,
+    cursor_name: XAtom<'a>,
+}
+
+impl<'a> XDisplayCursorEvent<'a> {
+    /// Converts the X cursor notify event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    /// * `display` - The display the event occurred on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xfixes_sys::XFixesCursorNotifyEvent, display: &'a XDisplay) -> Self {
+        Self {
+            subtype: XDisplayCursorEventSubtype::new(event.subtype),
+            cursor_serial: event.cursor_serial as _,
+            timestamp: event.timestamp as _,
+            cursor_name: XAtom::new(event.cursor_name, display),
+        }
+    }
+
+    /// Retrieves the subtype of the event.
+    pub fn subtype(&self) -> XDisplayCursorEventSubtype {
+        self.subtype
+    }
+
+    /// Retrieves the serial of the cursor.
+    pub fn cursor_serial(&self) -> u64 {
+        self.cursor_serial
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.timestamp
+    }
+
+    /// Retrieves the name of the cursor that changed.
+    pub fn cursor_name(&self) -> XAtom<'a> {
+        self.cursor_name
     }
 }
