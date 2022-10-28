@@ -1,4 +1,7 @@
-use crate::{xlib_sys, XBitmapPadding, XEvent, XFont, XImage, XImageFormat, XVisual};
+use crate::{
+    xfixes_sys, xlib_sys, XBitmapPadding, XCursorImage, XEvent, XFont, XImage, XImageFormat,
+    XVisual,
+};
 use crate::{XAtom, XLibError, XScreen};
 use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
@@ -282,6 +285,11 @@ impl XDisplay {
         };
 
         unsafe { XImage::new(image, self) }
+    }
+
+    /// Retrieves the current cursor image.
+    pub fn get_cursor_image(&self) -> XCursorImage {
+        unsafe { XCursorImage::new(xfixes_sys::XFixesGetCursorImage(self.handle)) }
     }
 }
 
