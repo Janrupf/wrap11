@@ -1,6 +1,6 @@
-use crate::{xlib_sys, XEvent};
+use crate::{xlib_sys, XEvent, XFont};
 use crate::{XAtom, XLibError, XScreen};
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -36,9 +36,10 @@ impl XDisplay {
             )
         };
         if handle.is_null() {
-            return Err(XLibError::OpenDisplayFailed(
-                Self::display_name(name).unwrap_or_else(|| String::from("<unknown>")),
-            ));
+            let attempted_name =
+                Self::display_name(name).unwrap_or_else(|| String::from("<unknown>"));
+
+            return Err(XLibError::OpenDisplayFailed(attempted_name));
         }
 
         Ok(XDisplay { handle })
@@ -62,11 +63,8 @@ impl XDisplay {
         if used_name.is_null() {
             None
         } else {
-            Some(
-                unsafe { CString::from_raw(used_name) }
-                    .to_string_lossy()
-                    .into(),
-            )
+            let used_name = unsafe { CStr::from_ptr(used_name).to_string_lossy().into_owned() };
+            Some(used_name)
         }
     }
 
@@ -165,6 +163,67 @@ impl XDisplay {
 
         debug_assert!(atom != 0);
         unsafe { XAtom::new(atom, self) }
+    }
+
+    /// Attempts to load and query an X11 font.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the font to load
+    ///
+    /// # Panics
+    ///
+    /// If the name contains a nul character.
+    pub fn load_query_font(&self, name: impl AsRef<str>) -> Option<XFont> {
+        let name = CString::new(name.as_ref()).unwrap();
+
+        let font = unsafe { xlib_sys::XLoadQueryFont(self.handle, name.as_ptr()) };
+        if font.is_null() {
+            None
+        } else {
+            Some(unsafe { XFont::new(font, true, self) })
+        }
+    }
+
+    /// Attempts to find the default font for the display.
+    ///
+    /// # Arguments
+    ///
+    /// * `program` - The name of the program to use when looking up defaults
+    ///
+    /// # Panics
+    ///
+    /// If the program name contains a nul character.
+    pub fn find_default_font(&self, program: impl AsRef<str>) -> Option<XFont> {
+        XFont::find_default(program, self)
+    }
+
+    /// Retrieves a default from the display.
+    ///
+    /// # Arguments
+    ///
+    /// * `program` - The name of the program requesting the default
+    /// * `name` - The name of the default to retrieve
+    ///
+    /// # Panics
+    ///
+    /// If the name or program contains a nul character or if the default is not UTF-8.
+    pub fn get_default(
+        &self,
+        program: impl AsRef<str>,
+        name: impl AsRef<str>,
+    ) -> Option<&'static str> {
+        let program = CString::new(program.as_ref()).unwrap();
+        let name = CString::new(name.as_ref()).unwrap();
+
+        let val = unsafe { xlib_sys::XGetDefault(self.handle, program.as_ptr(), name.as_ptr()) };
+
+        if val.is_null() {
+            None
+        } else {
+            let cstr = unsafe { CStr::from_ptr(val) };
+            Some(cstr.to_str().unwrap())
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::xlib_sys;
+use crate::{xlib_sys, XFont};
 use crate::{XDisplay, XDrawable};
 
 /// A graphics context bound to a drawable.
@@ -53,6 +53,15 @@ where
         unsafe { xlib_sys::XSetBackground(self.display.handle(), self.handle, background) };
     }
 
+    /// Sets the font of the graphics context.
+    ///
+    /// # Arguments
+    ///
+    /// * `font` - The font to use
+    pub fn set_font(&self, font: &XFont<'a>) {
+        unsafe { xlib_sys::XSetFont(self.display.handle(), self.handle, font.id().0) };
+    }
+
     /// Fills a rectangle.
     ///
     /// # Arguments
@@ -71,6 +80,29 @@ where
                 y,
                 width,
                 height,
+            );
+        }
+    }
+
+    /// Draws a string.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x coordinate to start drawing at
+    /// * `y` - The y coordinate to start drawing at
+    /// * `s` - The string to draw
+    pub fn draw_string(&self, x: i32, y: i32, s: impl AsRef<str>) {
+        let text_bytes = s.as_ref().as_bytes();
+
+        unsafe {
+            xlib_sys::XDrawString(
+                self.display.handle(),
+                self.drawable.drawable_handle(),
+                self.handle,
+                x,
+                y,
+                text_bytes.as_ptr() as _,
+                text_bytes.len() as _,
             );
         }
     }

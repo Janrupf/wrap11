@@ -4,6 +4,7 @@ mod cursor;
 mod display;
 mod drawable;
 mod event;
+mod font;
 mod gc;
 mod pixmap;
 mod region;
@@ -17,6 +18,7 @@ pub use cursor::*;
 pub use display::*;
 pub use drawable::*;
 pub use event::*;
+pub use font::*;
 pub use gc::*;
 pub use pixmap::*;
 pub use region::*;
@@ -28,6 +30,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum XLibError {
-    #[error("failed to open display :{0}")]
+    #[error("failed to open display: {0}")]
     OpenDisplayFailed(String),
 }
