@@ -22,6 +22,7 @@ pub enum QueuedMode {
 pub struct XDisplay {
     handle: *mut xlib_sys::Display,
     xfixes_event_base: i32,
+    xinput2_opcode: i32,
 }
 
 impl XDisplay {
@@ -54,9 +55,26 @@ impl XDisplay {
             xfixes_sys::XFixesQueryExtension(handle, &mut xfixes_event_base, &mut xfixes_error_base)
         };
 
+        let mut xinput2_opcode = 0;
+        let mut xinput2_event_base = 0;
+        let mut xinput2_error_base = 0;
+
+        unsafe {
+            let name = CString::new("XInputExtension").unwrap();
+
+            xlib_sys::XQueryExtension(
+                handle,
+                name.as_ptr(),
+                &mut xinput2_opcode,
+                &mut xinput2_event_base,
+                &mut xinput2_error_base,
+            );
+        }
+
         Ok(XDisplay {
             handle,
             xfixes_event_base,
+            xinput2_opcode,
         })
     }
 
@@ -306,6 +324,11 @@ impl XDisplay {
     /// Retrieves the event base id for xfixes events.
     pub fn xfixes_event_base(&self) -> i32 {
         self.xfixes_event_base
+    }
+
+    /// Retrieves the opcode for the xinput2 extension.
+    pub fn xinput2_opcode(&self) -> i32 {
+        self.xinput2_opcode
     }
 }
 

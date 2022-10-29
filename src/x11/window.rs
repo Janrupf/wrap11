@@ -1,6 +1,6 @@
 use crate::{
-    xcomposite_sys, xfixes_sys, xlib_sys, XAtom, XColormap, XCursor, XDisplay, XDrawable, XPixmap,
-    XScreen, XServerRegion, XVisual,
+    xcomposite_sys, xfixes_sys, xinput2_sys, xlib_sys, XAtom, XColormap, XCursor, XDisplay,
+    XDrawable, XPixmap, XScreen, XServerRegion, XVisual,
 };
 use std::ffi::CString;
 
@@ -519,6 +519,125 @@ bitflags::bitflags! {
     }
 }
 
+bitflags::bitflags! {
+    /// Determines which XInput2 events are sent to the X11 client.
+    pub struct XInputEventMask: i32 {
+        /// Events are sent when a device has changed.
+        const DEVICE_CHANGED = xinput2_sys::XI_DeviceChangedMask;
+
+        /// Events are sent when a key has been pressed.
+        const KEY_PRESS = xinput2_sys::XI_KeyPressMask;
+
+        /// Events are sent when a key has been released.
+        const KEY_RELEASE = xinput2_sys::XI_KeyReleaseMask;
+
+        /// Events are sent when a button has been pressed.
+        const BUTTON_PRESS = xinput2_sys::XI_ButtonPressMask;
+
+        /// Events are sent when a button has been released.
+        const BUTTON_RELEASE = xinput2_sys::XI_ButtonReleaseMask;
+
+        /// Events are sent when an input device moved the cursor.
+        const MOTION = xinput2_sys::XI_MotionMask;
+
+        /// Events are sent when the cursor entered.
+        const ENTER = xinput2_sys::XI_EnterMask;
+
+        /// Events are sent when the cursor left.
+        const LEAVE = xinput2_sys::XI_LeaveMask;
+
+        /// Events are sent when something has been focused.
+        const FOCUS_IN = xinput2_sys::XI_FocusInMask;
+
+        /// Events are sent when something has been unfocused.
+        const FOCUS_OUT = xinput2_sys::XI_FocusOutMask;
+
+        /// Events are sent when the hierarchy changed.
+        const HIERARCHY_CHANGED = xinput2_sys::XI_HierarchyChangedMask;
+
+        /// Events are sent when a property changed.
+        const PROPERTY_CHANGE = xinput2_sys::XI_PropertyEventMask;
+
+        /// Events are sent when a raw input device pressed a key.
+        const RAW_KEY_PRESS = xinput2_sys::XI_RawKeyPressMask;
+
+        /// Events are sent when a raw input device released a key.
+        const RAW_KEY_RELEASE = xinput2_sys::XI_RawKeyReleaseMask;
+
+        /// Events are sent when a raw input device pressed a button.
+        const RAW_BUTTON_PRESS = xinput2_sys::XI_RawButtonPress;
+
+        /// Events are sent when a raw input device released a button.
+        const RAW_BUTTON_RELEASE = xinput2_sys::XI_RawButtonRelease;
+
+        /// Events are sent when a raw input device moved the cursor.
+        const RAW_MOTION = xinput2_sys::XI_RawMotionMask;
+
+        /// Events are sent when a touch started.
+        const TOUCH_BEGIN = xinput2_sys::XI_TouchBeginMask;
+
+        /// Events are sent when a touch ends.
+        const TOUCH_END = xinput2_sys::XI_TouchEndMask;
+
+        /// Events are sent when a touch ownership changed.
+        const TOUCH_OWNERSHIP_CHANGED = xinput2_sys::XI_TouchOwnershipChangedMask;
+
+        /// Events are sent when a touch updated.
+        const TOUCH_UPDATE = xinput2_sys::XI_TouchUpdateMask;
+
+        /// Events are sent when a raw input device started a touch.
+        const RAW_TOUCH_BEGIN = xinput2_sys::XI_RawTouchBeginMask;
+
+        /// Events are sent when a raw input device ended a touch.
+        const RAW_TOUCH_END = xinput2_sys::XI_RawTouchEndMask;
+
+        /// Events are sent when a raw input device updated a touch.
+        const RAW_TOUCH_UPDATE = xinput2_sys::XI_RawTouchUpdateMask;
+
+        /// Events are sent when a barrier has been hit.
+        const BARRIER_HIT = xinput2_sys::XI_BarrierHitMask;
+
+        /// Events are sent when a barrier has been left.
+        const BARRIER_LEAVE = xinput2_sys::XI_BarrierLeaveMask;
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[repr(transparent)]
+pub struct XInputDevice {
+    id: i32,
+}
+
+impl XInputDevice {
+    /// Wraps an existing XInput device.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the device to wrap
+    pub fn from_id(id: i32) -> Self {
+        Self { id }
+    }
+
+    /// Creates an XInput device which represents all devices.
+    pub fn all() -> Self {
+        Self {
+            id: xinput2_sys::XIAllDevices,
+        }
+    }
+
+    /// Creates an XInput device which represents all master devices.
+    pub fn all_master() -> Self {
+        Self {
+            id: xinput2_sys::XIAllMasterDevices,
+        }
+    }
+
+    /// Retrieves the id of the device.
+    pub fn id(&self) -> i32 {
+        self.id
+    }
+}
+
 /// Represents a window on the X server.
 #[derive(Debug)]
 pub struct XWindow<'a> {
@@ -624,6 +743,35 @@ impl<'a> XWindow<'a> {
         unsafe {
             xfixes_sys::XFixesSelectCursorInput(self.display.handle(), self.handle, mask.bits as _)
         }
+    }
+
+    /// Selects the XInput mask for the window
+    pub fn select_xinput_events(&self, mask: Vec<(XInputDevice, XInputEventMask)>) {
+        let mut event_mask_bytes = Vec::with_capacity(mask.len());
+        let mut raw_event_masks = Vec::with_capacity(mask.len());
+
+        for (device, mask) in mask {
+            let numeric_mask = mask.bits;
+            event_mask_bytes.push(numeric_mask);
+
+            let numeric_mask_ptr =
+                unsafe { event_mask_bytes.as_ptr().add(event_mask_bytes.len() - 1) };
+
+            raw_event_masks.push(xinput2_sys::XIEventMask {
+                deviceid: device.id(),
+                mask: numeric_mask_ptr as _,
+                mask_len: std::mem::size_of::<i32>() as _,
+            });
+        }
+
+        unsafe {
+            xinput2_sys::XISelectEvents(
+                self.display.handle(),
+                self.handle,
+                raw_event_masks.as_mut_ptr(),
+                raw_event_masks.len() as _,
+            )
+        };
     }
 
     /// Store the name of the window.

@@ -1,6 +1,6 @@
 use crate::{
-    xfixes_sys, xlib_sys, ColormapHandleOwnership, ColormapState, WindowHandleOwnership, XAtom,
-    XColormap, XDisplay, XWindow,
+    xfixes_sys, xinput2_sys, xlib_sys, ColormapHandleOwnership, ColormapState,
+    WindowHandleOwnership, XAtom, XColormap, XDisplay, XInputDevice, XWindow,
 };
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -520,6 +520,162 @@ pub enum XEventData<'a> {
     /// is set.
     CursorChanged(XDisplayCursorEvent<'a>),
 
+    /// The XInput2 hierarchy has changed.
+    ///
+    /// Only generated when [`XInputEventMask::HIERARCHY_CHANGED`][crate::XInputEventMask::HIERARCHY_CHANGED]
+    /// is set.
+    XIHierarchyChanged(XIHierarchyEvent),
+
+    /// An XInput2 device has changed.
+    ///
+    /// Only generated when [`XInputEventMask::DEVICE_CHANGED`][crate::XInputEventMask::DEVICE_CHANGED]
+    /// is set.
+    XIDeviceChanged(XIDeviceChangedEvent<'a>),
+
+    /// A key has been pressed.
+    ///
+    /// Only generated when [`XInputEventMask::KEY_PRESS`][crate::XInputEventMask::KEY_PRESS]
+    /// is set.
+    XIKeyPressed(XIDeviceEvent<'a>),
+
+    /// A key has been released.
+    ///
+    /// Only generated when [`XInputEventMask::KEY_RELEASE][crate::XInputEventMask::KEY_RELEASE]
+    /// is set.
+    XIKeyReleased(XIDeviceEvent<'a>),
+
+    /// A button has been pressed.
+    ///
+    /// Only generated when [`XInputEventMask::BUTTON_PRESS][crate::XInputEventMask::BUTTON_PRESS]
+    /// is set.
+    XIButtonPressed(XIDeviceEvent<'a>),
+
+    /// A button has been released.
+    ///
+    /// Only generated when [`XInputEventMask::BUTTON_RELEASE][crate::XInputEventMask::BUTTON_RELEASE]
+    /// is set.
+    XIButtonReleased(XIDeviceEvent<'a>),
+
+    /// A touch has begun.
+    ///
+    /// Only generated when [`XInputEventMask::TOUCH_BEGIN][crate::XInputEventMask::TOUCH_BEGIN]
+    /// is set.
+    XITouchBegin(XIDeviceEvent<'a>),
+
+    /// A touch has ended.
+    ///
+    /// Only generated when [`XInputEventMask::TOUCH_END][crate::XInputEventMask::TOUCH_END]
+    /// is set.
+    XITouchEnd(XIDeviceEvent<'a>),
+
+    /// A touch has updated.
+    ///
+    /// Only generated when [`XInputEventMask::TOUCH_UPDATE][crate::XInputEventMask::TOUCH_UPDATE]
+    /// is set.
+    XITouchUpdate(XIDeviceEvent<'a>),
+
+    /// A touch ownership has changed.
+    ///
+    /// Only generated when [`XInputEventMask::TOUCH_OWNERSHIP_CHANGED][crate::XInputEventMask::TOUCH_OWNERSHIP_CHANGED]
+    /// is set.
+    XITouchOwnershipChanged(XITouchOwnershipEvent<'a>),
+
+    /// A pointer has moved.
+    ///
+    /// Only generated when [`XInputEventMask::MOTION][crate::XInputEventMask::MOTION]
+    /// is set.
+    XIMotion(XIDeviceEvent<'a>),
+
+    /// A raw key has been pressed.
+    ///
+    /// Only generated when [`XInputEventMask::RAW_KEY_PRESS`][crate::XInputEventMask::RAW_KEY_PRESS]
+    /// is set.
+    XIRawKeyPressed(XIRawEvent),
+
+    /// A raw key has been released.
+    ///
+    /// Only generated when [`XInputEventMask::RAW_KEY_RELEASE`][crate::XInputEventMask::RAW_KEY_RELEASE]
+    /// is set.
+    XIRawKeyReleased(XIRawEvent),
+
+    /// A raw button has been pressed.
+    ///
+    /// Only generated when [`XInputEventMask::RAW_BUTTON_PRESS`][crate::XInputEventMask::RAW_BUTTON_PRESS]
+    /// is set.
+    XIRawButtonPressed(XIRawEvent),
+
+    /// A raw button has been released.
+    ///
+    /// Only generated when [`XInputEventMask::RAW_BUTTON_RELEASE`][crate::XInputEventMask::RAW_BUTTON_RELEASE]
+    /// is set.
+    XIRawButtonReleased(XIRawEvent),
+
+    /// A raw touch has begun.
+    ///
+    /// Only generated when [`XInputEventMask::RAW_TOUCH_BEGIN`][crate::XInputEventMask::RAW_TOUCH_BEGIN]
+    /// is set.
+    XIRawTouchBegin(XIRawEvent),
+
+    /// A raw touch has ended.
+    ///
+    /// Only generated when [`XInputEventMask::RAW_TOUCH_END`][crate::XInputEventMask::RAW_TOUCH_END]
+    /// is set.
+    XIRawTouchEnd(XIRawEvent),
+
+    /// A raw touch has been updated.
+    ///
+    /// Only generated when [`XInputEventMask::RAW_TOUCH_UPDATE`][crate::XInputEventMask::RAW_TOUCH_UPDATE]
+    /// is set.
+    XIRawTouchUpdated(XIRawEvent),
+
+    /// A raw motion has occurred.
+    ///
+    /// Only generated when [`XInputEventMask::RAW_MOTION`][crate::XInputEventMask::RAW_MOTION]
+    /// is set.
+    XIRawMotion(XIRawEvent),
+
+    /// A pointer has hit a barrier.
+    ///
+    /// Only generated when [`XInputEventMask::BARRIER_HIT`][crate::XInputEventMask::BARRIER_HIT]
+    /// is set.
+    XIBarrierHit(XIBarrierEvent<'a>),
+
+    /// A pointer has left a barrier.
+    ///
+    /// Only generated when [`XInputEventMask::BARRIER_LEAVE`][crate::XInputEventMask::BARRIER_LEAVE]
+    /// is set.
+    XIBarrierLeft(XIBarrierEvent<'a>),
+
+    /// A device has entered.
+    ///
+    /// Only generated when [`XInputEventMask::ENTER`][crate::XInputEventMask::ENTER]
+    /// is set.
+    XIEntered(XIFocusEvent<'a>),
+
+    /// A device has left.
+    ///
+    /// Only generated when [`XInputEventMask::LEAVE`][crate::XInputEventMask::LEAVE]
+    /// is set.
+    XILeft(XIFocusEvent<'a>),
+
+    /// Something has been focused.
+    ///
+    /// Only generated when [`XInputEventMask::FOCUS_IN`][crate::XInputEventMask::FOCUS_IN]
+    /// is set.
+    XIFocusIn(XIFocusEvent<'a>),
+
+    /// Something has been unfocused.
+    ///
+    /// Only generated when [`XInputEventMask::FOCUS_OUT`][crate::XInputEventMask::FOCUS_OUT]
+    /// is set.
+    XIFocusOut(XIFocusEvent<'a>),
+
+    /// A device property changed.
+    ///
+    /// Only generated when [`XInputEventMask::PROPERTY_CHANGE`][crate::XInputEventMask::PROPERTY_CHANGE]
+    /// is set.
+    XIPropertyChanged(XIPropertyEvent<'a>),
+
     /// An unknown event has occurred, this may be sent by X extension and can be handled
     /// using the raw structure if desired.
     Unknown(xlib_sys::XEvent),
@@ -607,6 +763,7 @@ impl<'a> XEventData<'a> {
             xlib_sys::VisibilityNotify => {
                 Self::VisibilityChange(XVisibilityEvent::new(event.visibility))
             }
+            xlib_sys::GenericEvent => Self::new_generic(event, display),
             x if x == display.xfixes_event_base() + xfixes_sys::XFixesCursorNotify => {
                 Self::CursorChanged(XDisplayCursorEvent::new(
                     event.xfixes_cursor_notify,
@@ -615,6 +772,232 @@ impl<'a> XEventData<'a> {
             }
             _ => Self::Unknown(event),
         }
+    }
+
+    /// Converts the generic X event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The generic X native event
+    /// * `display` - The display the event occurred on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    unsafe fn new_generic(event: xlib_sys::XEvent, display: &'a XDisplay) -> Self {
+        debug_assert_eq!(event.type_, xlib_sys::GenericEvent);
+
+        if event.generic_event_cookie.extension == display.xinput2_opcode() {
+            Self::new_xinput2(event, display)
+        } else {
+            Self::Unknown(event)
+        }
+    }
+
+    /// Converts the xinput2 X event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The input2 X native event
+    /// * `display` - The display the event occurred on
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    unsafe fn new_xinput2(mut event: xlib_sys::XEvent, display: &'a XDisplay) -> Self {
+        let event_cookie = &mut event.generic_event_cookie;
+
+        xlib_sys::XGetEventData(display.handle(), event_cookie);
+        let event = match event_cookie.evtype {
+            xinput2_sys::XI_DeviceChanged => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceChangedEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIDeviceChanged(converted)
+            }
+            xinput2_sys::XI_KeyPress => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIKeyPressed(converted)
+            }
+            xinput2_sys::XI_KeyRelease => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIKeyReleased(converted)
+            }
+            xinput2_sys::XI_ButtonPress => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIButtonPressed(converted)
+            }
+            xinput2_sys::XI_ButtonRelease => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIButtonReleased(converted)
+            }
+            xinput2_sys::XI_TouchBegin => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XITouchBegin(converted)
+            }
+            xinput2_sys::XI_TouchEnd => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XITouchEnd(converted)
+            }
+            xinput2_sys::XI_TouchUpdate => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XITouchUpdate(converted)
+            }
+            xinput2_sys::XI_TouchOwnership => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XITouchOwnershipEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XITouchOwnershipChanged(converted)
+            }
+            xinput2_sys::XI_Motion => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIDeviceEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIMotion(converted)
+            }
+            xinput2_sys::XI_HierarchyChanged => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIHierarchyEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIHierarchyChanged(converted)
+            }
+            xinput2_sys::XI_RawKeyPress => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIRawEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIRawKeyPressed(converted)
+            }
+            xinput2_sys::XI_RawKeyRelease => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIRawEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIRawKeyReleased(converted)
+            }
+            xinput2_sys::XI_RawButtonPress => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIRawEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIRawButtonPressed(converted)
+            }
+            xinput2_sys::XI_RawButtonRelease => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIRawEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIRawButtonReleased(converted)
+            }
+            xinput2_sys::XI_RawTouchBegin => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIRawEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIRawTouchBegin(converted)
+            }
+            xinput2_sys::XI_RawTouchEnd => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIRawEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIRawTouchEnd(converted)
+            }
+            xinput2_sys::XI_RawTouchUpdate => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIRawEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIRawTouchUpdated(converted)
+            }
+            xinput2_sys::XI_RawMotion => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIRawEvent::new(event);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIRawMotion(converted)
+            }
+            xinput2_sys::XI_BarrierHit => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIBarrierEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIBarrierHit(converted)
+            }
+            xinput2_sys::XI_BarrierLeave => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIBarrierEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIBarrierLeft(converted)
+            }
+            xinput2_sys::XI_Enter => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIFocusEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIEntered(converted)
+            }
+            xinput2_sys::XI_Leave => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIFocusEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XILeft(converted)
+            }
+            xinput2_sys::XI_FocusIn => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIFocusEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIFocusIn(converted)
+            }
+            xinput2_sys::XI_FocusOut => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIFocusEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIFocusOut(converted)
+            }
+            xinput2_sys::XI_PropertyEvent => {
+                let event = *(event_cookie.data as *mut _);
+                let converted = XIPropertyEvent::new(event, display);
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+
+                Self::XIPropertyChanged(converted)
+            }
+            _ => {
+                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+                Self::Unknown(event)
+            }
+        };
+
+        event
     }
 }
 
@@ -2035,5 +2418,1257 @@ impl<'a> XDisplayCursorEvent<'a> {
     /// Retrieves the name of the cursor that changed.
     pub fn cursor_name(&self) -> XAtom<'a> {
         self.cursor_name
+    }
+}
+
+bitflags::bitflags! {
+    pub struct XIHierarchyChangeFlags: i32 {
+        /// A master device has been added.
+        const MASTER_ADDED = xinput2_sys::XIMasterAdded;
+
+        /// A master device has been removed.
+        const MASTER_REMOVED = xinput2_sys::XIMasterRemoved;
+
+        /// A slave device has been added.
+        const SLAVE_ADDED = xinput2_sys::XISlaveAdded;
+
+        /// A slave device has been removed.
+        const SLAVE_REMOVED = xinput2_sys::XISlaveRemoved;
+
+        /// A slave device has been attached.
+        const SLAVE_ATTACHED = xinput2_sys::XISlaveAttached;
+
+        /// A slave device has been detached.
+        const SLAVE_DETACHED = xinput2_sys::XISlaveDetached;
+
+        /// A device has been enabled.
+        const DEVICE_ENABLED = xinput2_sys::XIDeviceEnabled;
+
+        /// A device has been disabled.
+        const DEVICE_DISABLED = xinput2_sys::XIDeviceDisabled;
+    }
+}
+
+#[derive(Debug)]
+pub struct XIHierarchyInfo {
+    device: XInputDevice,
+    attachment: i32,
+    usage: i32,
+    enabled: bool,
+    flags: XIHierarchyChangeFlags,
+}
+
+impl XIHierarchyInfo {
+    /// Wraps an existing XInput2 hierarchy info.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The XInput2 native info
+    pub fn new(handle: xinput2_sys::XIHierarchyInfo) -> Self {
+        Self {
+            device: XInputDevice::from_id(handle.deviceid),
+            attachment: handle.attachment,
+            usage: handle._use,
+            enabled: handle.enabled != 0,
+            flags: unsafe { XIHierarchyChangeFlags::from_bits_unchecked(handle.flags) },
+        }
+    }
+
+    /// Retrieves the device this info applies to.
+    pub fn device(&self) -> XInputDevice {
+        self.device
+    }
+
+    /// Retrieves the attachment of this info
+    pub fn attachment(&self) -> i32 {
+        self.attachment
+    }
+
+    /// Retrieves the usage of this info
+    pub fn usage(&self) -> i32 {
+        self.usage
+    }
+
+    /// Determines whether the device is enabled.
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// Retrieves the flags of this info.
+    pub fn flags(&self) -> XIHierarchyChangeFlags {
+        self.flags
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct XIButtonState {
+    mask: Vec<u8>,
+}
+
+impl XIButtonState {
+    /// Creates a new XInput2 button state.
+    ///
+    /// # Arguments
+    ///
+    /// * `mask` - The mask of the state
+    pub fn new(mask: Vec<u8>) -> Self {
+        Self { mask }
+    }
+
+    /// Retrieves the mask of this state
+    pub fn mask(&self) -> &[u8] {
+        &self.mask
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(i32)]
+pub enum XIValuatorMode {
+    Absolute = xinput2_sys::XIModeAbsolute,
+    Relative = xinput2_sys::XIModeRelative,
+}
+
+impl XIValuatorMode {
+    /// Wraps an existing XInput2 valuator mode.
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - The XInput2 valuator mode
+    ///
+    /// # Panics
+    ///
+    /// If the given valuator mode is not valid.
+    pub fn new(mode: i32) -> Self {
+        match mode {
+            xinput2_sys::XIModeAbsolute => Self::Absolute,
+            xinput2_sys::XIModeRelative => Self::Relative,
+            x => unreachable!("Unknown XI valuator mode {}", x),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(i32)]
+pub enum XIScrollType {
+    Vertical = xinput2_sys::XIScrollTypeVertical,
+    Horizontal = xinput2_sys::XIScrollTypeHorizontal,
+}
+
+impl XIScrollType {
+    /// Wraps an existing XInput2 scroll type.
+    ///
+    /// # Arguments
+    ///
+    /// * `ty` - The XInput2 scroll type
+    ///
+    /// # Panics
+    ///
+    /// If the given scroll type is not valid.
+    pub fn new(ty: i32) -> Self {
+        match ty {
+            xinput2_sys::XIScrollTypeVertical => Self::Vertical,
+            xinput2_sys::XIScrollTypeHorizontal => Self::Horizontal,
+            x => unreachable!("Unknown XI scroll type {}", x),
+        }
+    }
+}
+
+bitflags::bitflags! {
+    pub struct XIScrollFlags: i32 {
+        /// No legacy events will be emulated.
+        const NO_EMULATION = xinput2_sys::XIScrollFlagNoEmulation;
+
+        /// For legacy events, this is the preferred axis.
+        const PREFERRED = xinput2_sys::XIScrollFlagPreferred;
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(i32)]
+pub enum XITouchMode {
+    Direct = xinput2_sys::XIDirectTouch,
+    Dependent = xinput2_sys::XIDependentTouch,
+}
+
+impl XITouchMode {
+    /// Wraps an existing XInput2 touch mode.
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - The XInput2 touch mode
+    ///
+    /// # Panics
+    ///
+    /// If the given touch mode is not valid.
+    pub fn new(mode: i32) -> Self {
+        match mode {
+            xinput2_sys::XIDirectTouch => Self::Direct,
+            xinput2_sys::XIDependentTouch => Self::Dependent,
+            x => unreachable!("Unknown XI touch mode {}", x),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum XIClassInfo<'a> {
+    Button {
+        source: XInputDevice,
+        labels: Vec<XAtom<'a>>,
+        state: XIButtonState,
+    },
+    Key {
+        source: XInputDevice,
+        key_codes: Vec<i32>,
+    },
+    Valuator {
+        source: XInputDevice,
+        number: i32,
+        label: Option<XAtom<'a>>,
+        min: f64,
+        max: f64,
+        value: f64,
+        resolution: i32,
+        mode: XIValuatorMode,
+    },
+    Scroll {
+        source: XInputDevice,
+        number: i32,
+        ty: XIScrollType,
+        increment: f64,
+        flags: XIScrollFlags,
+    },
+    Touch {
+        source: XInputDevice,
+        mode: XITouchMode,
+        num_touches: u32,
+    },
+}
+
+impl<'a> XIClassInfo<'a> {
+    /// Wraps an existing XInput2 class info.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The XInput2 native info
+    /// * `display` - The display the info belongs to
+    ///
+    /// # Safety
+    ///
+    /// It is up to the caller to ensure all arguments are valid.
+    pub unsafe fn new(handle: *const xinput2_sys::XIAnyClassInfo, display: &'a XDisplay) -> Self {
+        let handle = &*handle;
+
+        match handle._type {
+            xinput2_sys::XIKeyClass => {
+                let handle: &xinput2_sys::XIKeyClassInfo = std::mem::transmute(handle);
+
+                let key_codes =
+                    std::slice::from_raw_parts(handle.keycodes, handle.num_keycodes as _);
+
+                Self::Key {
+                    source: XInputDevice::from_id(handle.sourceid),
+                    key_codes: key_codes.to_vec(),
+                }
+            }
+            xinput2_sys::XIButtonClass => {
+                let handle: &xinput2_sys::XIButtonClassInfo = std::mem::transmute(handle);
+
+                let labels = std::slice::from_raw_parts(handle.labels, handle.num_buttons as _);
+                let state =
+                    std::slice::from_raw_parts(handle.state.mask, handle.state.mask_len as _);
+
+                Self::Button {
+                    source: XInputDevice::from_id(handle.sourceid),
+                    labels: labels.iter().map(|a| XAtom::new(*a, display)).collect(),
+                    state: XIButtonState::new(state.to_vec()),
+                }
+            }
+            xinput2_sys::XIValuatorClass => {
+                let handle: &xinput2_sys::XIValuatorClassInfo = std::mem::transmute(handle);
+
+                Self::Valuator {
+                    source: XInputDevice::from_id(handle.sourceid),
+                    number: handle.number,
+                    label: if handle.label == 0 {
+                        None
+                    } else {
+                        Some(XAtom::new(handle.label, display))
+                    },
+                    min: handle.min,
+                    max: handle.max,
+                    value: handle.value,
+                    resolution: handle.resolution,
+                    mode: XIValuatorMode::new(handle.mode),
+                }
+            }
+            xinput2_sys::XIScrollClass => {
+                let handle: &xinput2_sys::XIScrollClassInfo = std::mem::transmute(handle);
+
+                Self::Scroll {
+                    source: XInputDevice::from_id(handle.sourceid),
+                    number: handle.number,
+                    ty: XIScrollType::new(handle._type),
+                    increment: handle.increment,
+                    flags: XIScrollFlags::from_bits_unchecked(handle.flags),
+                }
+            }
+            xinput2_sys::XITouchClass => {
+                let handle: &xinput2_sys::XITouchClassInfo = std::mem::transmute(handle);
+
+                Self::Touch {
+                    source: XInputDevice::from_id(handle.sourceid),
+                    mode: XITouchMode::new(handle.mode),
+                    num_touches: handle.num_touches as _,
+                }
+            }
+            x => unreachable!("Unknown XI class type {}", x),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct XIHierarchyEvent {
+    time: u64,
+    flags: XIHierarchyChangeFlags,
+    info: Vec<XIHierarchyInfo>,
+}
+
+impl XIHierarchyEvent {
+    /// Converts the XInput2 hierarchy event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xinput2_sys::XIHierarchyEvent) -> Self {
+        let info = std::slice::from_raw_parts(event.info, event.num_info as _);
+
+        Self {
+            time: event.time,
+            flags: XIHierarchyChangeFlags::from_bits_unchecked(event.flags),
+            info: info.iter().map(|i| XIHierarchyInfo::new(*i)).collect(),
+        }
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.time
+    }
+
+    /// Retrieves the flags of this event.
+    pub fn flags(&self) -> XIHierarchyChangeFlags {
+        self.flags
+    }
+
+    /// Retrieves additional hierarchy info of this event.
+    pub fn info(&self) -> &[XIHierarchyInfo] {
+        &self.info
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[repr(i32)]
+pub enum XIDeviceChangeReason {
+    SlaveSwitch = xinput2_sys::XISlaveSwitch,
+    DeviceChange = xinput2_sys::XIDeviceChange,
+}
+
+impl XIDeviceChangeReason {
+    /// Wraps an existing XInput2 device change reason.
+    ///
+    /// # Arguments
+    ///
+    /// * `reason` - The XInput2 device change reason
+    ///
+    /// # Panics
+    ///
+    /// If the given device change reason is not valid.
+    pub fn new(reason: i32) -> Self {
+        match reason {
+            xinput2_sys::XISlaveSwitch => Self::SlaveSwitch,
+            xinput2_sys::XIDeviceChange => Self::DeviceChange,
+            x => unreachable!("Unknown XI device change reason {}", x),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct XIDeviceChangedEvent<'a> {
+    time: u64,
+    device: XInputDevice,
+    source: XInputDevice,
+    reason: XIDeviceChangeReason,
+    classes: Vec<XIClassInfo<'a>>,
+}
+
+impl<'a> XIDeviceChangedEvent<'a> {
+    /// Converts the XInput2 device changed event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    /// * `display` - The display the event belongs to
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xinput2_sys::XIDeviceChangedEvent, display: &'a XDisplay) -> Self {
+        let classes = std::slice::from_raw_parts(event.classes, event.num_classes as _);
+
+        Self {
+            time: event.time,
+            device: XInputDevice::from_id(event.deviceid),
+            source: XInputDevice::from_id(event.sourceid),
+            reason: XIDeviceChangeReason::new(event.reason),
+            classes: classes
+                .iter()
+                .map(|c| XIClassInfo::new(*c, display))
+                .collect(),
+        }
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.time
+    }
+
+    /// Retrieves the device that changed.
+    pub fn device(&self) -> XInputDevice {
+        self.device
+    }
+
+    /// Retrieves the source of the new classes.
+    pub fn source(&self) -> XInputDevice {
+        self.source
+    }
+
+    /// Retrieves the reason the device changed.
+    pub fn reason(&self) -> XIDeviceChangeReason {
+        self.reason
+    }
+
+    /// Retrieves the new classes of the device
+    pub fn classes(&self) -> &[XIClassInfo] {
+        &self.classes
+    }
+}
+
+bitflags::bitflags! {
+    pub struct XIDeviceEventFlags: i32 {
+        /// Key event is repeated.
+        const KEY_REPEAT = xinput2_sys::XIKeyRepeat;
+
+        /// Pointer is emulated legacy event.
+        const POINTER_EMULATED = xinput2_sys::XIPointerEmulated;
+
+        /// Touch end event is pending.
+        const TOUCH_PENDING_END = xinput2_sys::XITouchPendingEnd;
+
+        /// Touch events are emulated as pointer events.
+        const TOUCH_EMULATING_POINTER = xinput2_sys::XITouchEmulatingPointer;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct XIValuatorState {
+    mask: Vec<u8>,
+    values: Vec<f64>,
+}
+
+impl XIValuatorState {
+    /// Creates a new XInput2 valuator state.
+    ///
+    /// # Arguments
+    ///
+    /// * `mask` - The mask of the state
+    /// * `values` - The values of the state
+    pub fn new(mask: Vec<u8>, values: Vec<f64>) -> Self {
+        Self { mask, values }
+    }
+
+    /// Retrieves the mask of this state
+    pub fn mask(&self) -> &[u8] {
+        &self.mask
+    }
+
+    /// Retrieves the values of this state.
+    pub fn values(&self) -> &[f64] {
+        &self.values
+    }
+}
+
+#[derive(Debug)]
+pub struct XIModifierState {
+    base: u32,
+    latched: u32,
+    locked: u32,
+    effective: u32,
+}
+
+impl XIModifierState {
+    /// Wraps an existing XInput2 modifier state.
+    ///
+    /// # Arguments
+    ///
+    /// * `state` - The XInput2 modifier state
+    pub fn new(state: xinput2_sys::XIModifierState) -> Self {
+        Self {
+            base: state.base as _,
+            latched: state.latched as _,
+            locked: state.locked as _,
+            effective: state.effective as _,
+        }
+    }
+
+    /// Retrieves the currently pressed modifiers.
+    pub fn base(&self) -> u32 {
+        self.base
+    }
+
+    /// Retrieves the latched modifiers.
+    pub fn latched(&self) -> u32 {
+        self.latched
+    }
+
+    /// Retrieves the locked modifiers.
+    pub fn locked(&self) -> u32 {
+        self.locked
+    }
+
+    /// Retrieves the effectively active modifiers.
+    pub fn effective(&self) -> u32 {
+        self.effective
+    }
+}
+
+#[derive(Debug)]
+pub struct XIDeviceEvent<'a> {
+    time: u64,
+    device: XInputDevice,
+    source: XInputDevice,
+    detail: i32,
+    root: XWindow<'a>,
+    event: XWindow<'a>,
+    child: XWindow<'a>,
+    root_x: f64,
+    root_y: f64,
+    event_x: f64,
+    event_y: f64,
+    flags: XIDeviceEventFlags,
+    buttons: XIButtonState,
+    valuators: XIValuatorState,
+    modifiers: XIModifierState,
+    group: XIModifierState,
+}
+
+impl<'a> XIDeviceEvent<'a> {
+    /// Converts the XInput2 device event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    /// * `display` - The display the event belongs to
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xinput2_sys::XIDeviceEvent, display: &'a XDisplay) -> Self {
+        let buttons = std::slice::from_raw_parts(event.buttons.mask, event.buttons.mask_len as _);
+
+        let valuator_mask =
+            std::slice::from_raw_parts(event.valuators.mask, event.valuators.mask_len as _);
+
+        let mut current_valuator_value = event.valuators.values;
+
+        let mut valuator_values = Vec::new();
+
+        for i in 0..(valuator_mask.len() * 8) {
+            if xinput2_sys::XIMaskIsSet(valuator_mask, i as _) {
+                valuator_values.push(*current_valuator_value);
+                current_valuator_value = current_valuator_value.add(1);
+            }
+        }
+
+        let valuators = XIValuatorState::new(valuator_mask.to_vec(), valuator_values);
+
+        Self {
+            time: event.time,
+            device: XInputDevice::from_id(event.deviceid),
+            source: XInputDevice::from_id(event.sourceid),
+            detail: event.detail,
+            root: XWindow::new(event.root, display, WindowHandleOwnership::Foreign),
+            event: XWindow::new(event.event, display, WindowHandleOwnership::Foreign),
+            child: XWindow::new(event.child, display, WindowHandleOwnership::Foreign),
+            root_x: event.root_x,
+            root_y: event.root_y,
+            event_x: event.event_x,
+            event_y: event.event_y,
+            flags: XIDeviceEventFlags::from_bits_unchecked(event.flags),
+            buttons: XIButtonState::new(buttons.to_vec()),
+            valuators,
+            modifiers: XIModifierState::new(event.mods),
+            group: XIModifierState::new(event.group),
+        }
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.time
+    }
+
+    /// Retrieves the device that changed.
+    pub fn device(&self) -> XInputDevice {
+        self.device
+    }
+
+    /// Retrieves the source of the new classes.
+    pub fn source(&self) -> XInputDevice {
+        self.source
+    }
+
+    /// Retrieves the detail of this event.
+    pub fn detail(&self) -> i32 {
+        self.detail
+    }
+
+    /// Retrieves the root window this event occurred in.
+    pub fn root(&self) -> &XWindow<'a> {
+        &self.root
+    }
+
+    /// Retrieves the window this event occurred in.
+    pub fn event(&self) -> &XWindow<'a> {
+        &self.event
+    }
+
+    /// Retrieves the window this event targeted.
+    pub fn child(&self) -> &XWindow<'a> {
+        &self.child
+    }
+
+    /// Retrieves the x coordinate in the root window where this event occurred.
+    pub fn root_x(&self) -> f64 {
+        self.root_x
+    }
+
+    /// Retrieves the y coordinate in the root window where this event occurred.
+    pub fn root_y(&self) -> f64 {
+        self.root_y
+    }
+
+    /// Retrieves the x coordinate in the event window where this event occurred.
+    pub fn event_x(&self) -> f64 {
+        self.event_x
+    }
+
+    /// Retrieves the y coordinate in the event window where this event occurred.
+    pub fn event_y(&self) -> f64 {
+        self.event_y
+    }
+
+    /// Retrieves the flags of this event.
+    pub fn flags(&self) -> XIDeviceEventFlags {
+        self.flags
+    }
+
+    /// Retrieves the buttons that triggered this event.
+    pub fn buttons(&self) -> &XIButtonState {
+        &self.buttons
+    }
+
+    /// Retrieves the valuators that were active during this event.
+    pub fn valuators(&self) -> &XIValuatorState {
+        &self.valuators
+    }
+
+    /// Retrieves the modifiers that were active during this event.
+    pub fn modifiers(&self) -> &XIModifierState {
+        &self.modifiers
+    }
+
+    /// Retrieves the group modifiers that were active during this event.
+    pub fn group(&self) -> &XIModifierState {
+        &self.group
+    }
+}
+
+#[derive(Debug)]
+pub struct XIRawEvent {
+    time: u64,
+    device: XInputDevice,
+    source: XInputDevice,
+    detail: i32,
+    flags: XIDeviceEventFlags,
+    valuators: XIValuatorState,
+    raw_values: Vec<f64>,
+}
+
+impl XIRawEvent {
+    /// Converts the XInput2 raw event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xinput2_sys::XIRawEvent) -> Self {
+        let valuator_mask =
+            std::slice::from_raw_parts(event.valuators.mask, event.valuators.mask_len as _);
+
+        let mut current_valuator_value = event.valuators.values;
+        let mut current_raw_value = event.raw_values;
+
+        let mut valuator_values = Vec::new();
+        let mut raw_values = Vec::new();
+
+        for i in 0..(valuator_mask.len() * 8) {
+            if xinput2_sys::XIMaskIsSet(valuator_mask, i as _) {
+                valuator_values.push(*current_valuator_value);
+                raw_values.push(*current_raw_value);
+
+                current_valuator_value = current_valuator_value.add(1);
+                current_raw_value = current_raw_value.add(1);
+            }
+        }
+
+        let valuators = XIValuatorState::new(valuator_mask.to_vec(), valuator_values);
+
+        Self {
+            time: event.time,
+            device: XInputDevice::from_id(event.deviceid),
+            source: XInputDevice::from_id(event.sourceid),
+            detail: event.detail,
+            flags: XIDeviceEventFlags::from_bits_unchecked(event.flags),
+            valuators,
+            raw_values,
+        }
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.time
+    }
+
+    /// Retrieves the device that changed.
+    pub fn device(&self) -> XInputDevice {
+        self.device
+    }
+
+    /// Retrieves the source of the original event.
+    pub fn source(&self) -> XInputDevice {
+        self.source
+    }
+
+    /// Retrieves the detail of the event.
+    pub fn detail(&self) -> i32 {
+        self.detail
+    }
+
+    /// Retrieves the flags of the event.
+    pub fn flags(&self) -> XIDeviceEventFlags {
+        self.flags
+    }
+
+    /// Retrieves the valuators of the event.
+    pub fn valuators(&self) -> &XIValuatorState {
+        &self.valuators
+    }
+
+    /// Retrieves the raw values of the event.
+    pub fn raw_values(&self) -> &[f64] {
+        &self.raw_values
+    }
+}
+
+bitflags::bitflags! {
+    pub struct XITouchOwnershipEventFlags: i32 {}
+}
+
+#[derive(Debug)]
+pub struct XITouchOwnershipEvent<'a> {
+    time: u64,
+    device: XInputDevice,
+    source: XInputDevice,
+    touch_id: u32,
+    root: XWindow<'a>,
+    event: XWindow<'a>,
+    child: XWindow<'a>,
+    flags: XITouchOwnershipEventFlags,
+}
+
+impl<'a> XITouchOwnershipEvent<'a> {
+    /// Converts the XInput2 raw event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    /// * `display` - The display the event belongs to
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xinput2_sys::XITouchOwnershipEvent, display: &'a XDisplay) -> Self {
+        Self {
+            time: event.time,
+            device: XInputDevice::from_id(event.deviceid),
+            source: XInputDevice::from_id(event.sourceid),
+            touch_id: event.touchid,
+            root: XWindow::new(event.root, display, WindowHandleOwnership::Foreign),
+            event: XWindow::new(event.event, display, WindowHandleOwnership::Foreign),
+            child: XWindow::new(event.child, display, WindowHandleOwnership::Foreign),
+            flags: XITouchOwnershipEventFlags::from_bits_unchecked(event.flags),
+        }
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.time
+    }
+
+    /// Retrieves the device that changed.
+    pub fn device(&self) -> XInputDevice {
+        self.device
+    }
+
+    /// Retrieves the source of the original event.
+    pub fn source(&self) -> XInputDevice {
+        self.source
+    }
+
+    /// Retrieves the touch id of the event.
+    pub fn touch_id(&self) -> u32 {
+        self.touch_id
+    }
+
+    /// Retrieves the root window this event occurred in.
+    pub fn root(&self) -> &XWindow<'a> {
+        &self.root
+    }
+
+    /// Retrieves the window this event occurred in.
+    pub fn event(&self) -> &XWindow<'a> {
+        &self.event
+    }
+
+    /// Retrieves the window this event targeted.
+    pub fn child(&self) -> &XWindow<'a> {
+        &self.child
+    }
+
+    /// Retrieves the flags of this event.
+    pub fn flags(&self) -> XITouchOwnershipEventFlags {
+        self.flags
+    }
+}
+
+bitflags::bitflags! {
+    pub struct XIBarrierEventFlags: i32 {
+        /// The pointer has been released from the barrier.
+        const POINTER_RELEASED = xinput2_sys::XIBarrierPointerReleased;
+
+        /// The device is grabbed.
+        const DEVICE_IS_GRABBED = xinput2_sys::XIBarrierDeviceIsGrabbed;
+    }
+}
+
+#[derive(Debug)]
+pub struct XIBarrierEvent<'a> {
+    time: u64,
+    device: XInputDevice,
+    source: XInputDevice,
+    event: XWindow<'a>,
+    root: XWindow<'a>,
+    root_x: f64,
+    root_y: f64,
+    dx: f64,
+    dy: f64,
+    dtime: i32,
+    flags: XIBarrierEventFlags,
+    barrier: xlib_sys::XID,
+    event_id: u32,
+}
+
+impl<'a> XIBarrierEvent<'a> {
+    /// Converts the XInput2 barrier event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    /// * `display` - The display the event belongs to
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xinput2_sys::XIBarrierEvent, display: &'a XDisplay) -> Self {
+        Self {
+            time: event.time,
+            device: XInputDevice::from_id(event.deviceid),
+            source: XInputDevice::from_id(event.sourceid),
+            event: XWindow::new(event.event, display, WindowHandleOwnership::Foreign),
+            root: XWindow::new(event.root, display, WindowHandleOwnership::Foreign),
+            root_x: event.root_x,
+            root_y: event.root_y,
+            dx: event.dx,
+            dy: event.dy,
+            dtime: event.dtime,
+            flags: XIBarrierEventFlags::from_bits_unchecked(event.flags),
+            barrier: event.barrier,
+            event_id: event.eventid,
+        }
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.time
+    }
+
+    /// Retrieves the device that changed.
+    pub fn device(&self) -> XInputDevice {
+        self.device
+    }
+
+    /// Retrieves the source of the new classes.
+    pub fn source(&self) -> XInputDevice {
+        self.source
+    }
+
+    /// Retrieves the root window this event occurred in.
+    pub fn root(&self) -> &XWindow<'a> {
+        &self.root
+    }
+
+    /// Retrieves the window this event occurred in.
+    pub fn event(&self) -> &XWindow<'a> {
+        &self.event
+    }
+
+    /// Retrieves the x coordinate in the root window where this event occurred.
+    pub fn root_x(&self) -> f64 {
+        self.root_x
+    }
+
+    /// Retrieves the y coordinate in the root window where this event occurred.
+    pub fn root_y(&self) -> f64 {
+        self.root_y
+    }
+
+    /// Retrieves the x delta of this event.
+    pub fn dx(&self) -> f64 {
+        self.dx
+    }
+
+    /// Retrieves the y delta of this event.
+    pub fn dy(&self) -> f64 {
+        self.dy
+    }
+
+    /// Retrieves the delta time of this event.
+    pub fn dtime(&self) -> i32 {
+        self.dtime
+    }
+
+    /// Retrieves the flags of this event.
+    pub fn flags(&self) -> XIBarrierEventFlags {
+        self.flags
+    }
+
+    /// Retrieves the barrier id which triggered this event.
+    pub fn barrier(&self) -> xlib_sys::XID {
+        self.barrier
+    }
+
+    /// Retrieves the barrier event id of this event
+    pub fn event_id(&self) -> u32 {
+        self.event_id
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[repr(i32)]
+pub enum XIFocusEventMode {
+    Normal = xinput2_sys::XINotifyNormal,
+    Grab = xinput2_sys::XINotifyGrab,
+    Ungrab = xinput2_sys::XINotifyUngrab,
+}
+
+impl XIFocusEventMode {
+    /// Wraps an existing XInput2 focus event mode.
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - The XInput2 focus event mode to wrap
+    ///
+    /// # Panics
+    ///
+    /// If the given focus event mode is not valid.
+    pub fn new(mode: i32) -> Self {
+        match mode {
+            xinput2_sys::XINotifyNormal => Self::Normal,
+            xinput2_sys::XINotifyGrab => Self::Grab,
+            xinput2_sys::XINotifyUngrab => Self::Ungrab,
+            x => unreachable!("Unknown XI focus event mode {}", x),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[repr(i32)]
+pub enum XIFocusEventDetail {
+    Ancestor = xinput2_sys::XINotifyAncestor,
+    Virtual = xinput2_sys::XINotifyVirtual,
+    Inferior = xinput2_sys::XINotifyInferior,
+    Nonlinear = xinput2_sys::XINotifyNonlinear,
+    NonlinearVirtual = xinput2_sys::XINotifyNonlinearVirtual,
+    Pointer = xinput2_sys::XINotifyPointer,
+    PointerRoot = xinput2_sys::XINotifyPointerRoot,
+    None = xinput2_sys::XINotifyDetailNone,
+}
+
+impl XIFocusEventDetail {
+    /// Wraps an existing XInput2 focus event detail.
+    ///
+    /// # Arguments
+    ///
+    /// * `detail` - The XInput2 focus event detail to wrap
+    ///
+    /// # Panics
+    ///
+    /// If the given focus event detail is not valid.
+    pub fn new(detail: i32) -> Self {
+        match detail {
+            xinput2_sys::XINotifyAncestor => Self::Ancestor,
+            xinput2_sys::XINotifyVirtual => Self::Virtual,
+            xinput2_sys::XINotifyInferior => Self::Inferior,
+            xinput2_sys::XINotifyNonlinear => Self::Nonlinear,
+            xinput2_sys::XINotifyNonlinearVirtual => Self::NonlinearVirtual,
+            xinput2_sys::XINotifyPointer => Self::Pointer,
+            xinput2_sys::XINotifyPointerRoot => Self::PointerRoot,
+            xinput2_sys::XINotifyDetailNone => Self::None,
+            x => unreachable!("Unknown XI focus event detail {}", x),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct XIFocusEvent<'a> {
+    time: u64,
+    device: XInputDevice,
+    source: XInputDevice,
+    detail: XIFocusEventDetail,
+    root: XWindow<'a>,
+    event: XWindow<'a>,
+    child: XWindow<'a>,
+    root_x: f64,
+    root_y: f64,
+    event_x: f64,
+    event_y: f64,
+    mode: XIFocusEventMode,
+    focus: bool,
+    same_screen: bool,
+    buttons: XIButtonState,
+    modifiers: XIModifierState,
+    group: XIModifierState,
+}
+
+impl<'a> XIFocusEvent<'a> {
+    /// Converts the XInput2 focus event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    /// * `display` - The display the event belongs to
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xinput2_sys::XIEnterEvent, display: &'a XDisplay) -> Self {
+        let buttons = std::slice::from_raw_parts(event.buttons.mask, event.buttons.mask_len as _);
+
+        Self {
+            time: event.time,
+            device: XInputDevice::from_id(event.deviceid),
+            source: XInputDevice::from_id(event.sourceid),
+            detail: XIFocusEventDetail::new(event.detail),
+            root: XWindow::new(event.root, display, WindowHandleOwnership::Foreign),
+            event: XWindow::new(event.event, display, WindowHandleOwnership::Foreign),
+            child: XWindow::new(event.child, display, WindowHandleOwnership::Foreign),
+            root_x: event.root_x,
+            root_y: event.root_y,
+            event_x: event.event_x,
+            event_y: event.event_y,
+            mode: XIFocusEventMode::new(event.mode),
+            focus: event.focus != 0,
+            same_screen: event.same_screen != 0,
+            buttons: XIButtonState::new(buttons.to_vec()),
+            modifiers: XIModifierState::new(event.mods),
+            group: XIModifierState::new(event.group),
+        }
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.time
+    }
+
+    /// Retrieves the device that changed.
+    pub fn device(&self) -> XInputDevice {
+        self.device
+    }
+
+    /// Retrieves the source of the new classes.
+    pub fn source(&self) -> XInputDevice {
+        self.source
+    }
+
+    /// Retrieves the detail of this event.
+    pub fn detail(&self) -> XIFocusEventDetail {
+        self.detail
+    }
+
+    /// Retrieves the root window this event occurred in.
+    pub fn root(&self) -> &XWindow<'a> {
+        &self.root
+    }
+
+    /// Retrieves the window this event occurred in.
+    pub fn event(&self) -> &XWindow<'a> {
+        &self.event
+    }
+
+    /// Retrieves the window this event targeted.
+    pub fn child(&self) -> &XWindow<'a> {
+        &self.child
+    }
+
+    /// Retrieves the x coordinate in the root window where this event occurred.
+    pub fn root_x(&self) -> f64 {
+        self.root_x
+    }
+
+    /// Retrieves the y coordinate in the root window where this event occurred.
+    pub fn root_y(&self) -> f64 {
+        self.root_y
+    }
+
+    /// Retrieves the x coordinate in the event window where this event occurred.
+    pub fn event_x(&self) -> f64 {
+        self.event_x
+    }
+
+    /// Retrieves the y coordinate in the event window where this event occurred.
+    pub fn event_y(&self) -> f64 {
+        self.event_y
+    }
+
+    /// Retrieves the mode of this event.
+    pub fn mode(&self) -> XIFocusEventMode {
+        self.mode
+    }
+
+    /// Determines whether the focus is now active.
+    pub fn focus(&self) -> bool {
+        self.focus
+    }
+
+    /// Determines whether the event occurred on the same screen.
+    pub fn same_screen(&self) -> bool {
+        self.same_screen
+    }
+
+    /// Retrieves the buttons that triggered this event.
+    pub fn buttons(&self) -> &XIButtonState {
+        &self.buttons
+    }
+
+    /// Retrieves the modifiers that were active during this event.
+    pub fn modifiers(&self) -> &XIModifierState {
+        &self.modifiers
+    }
+
+    /// Retrieves the group modifiers that were active during this event.
+    pub fn group(&self) -> &XIModifierState {
+        &self.group
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[repr(i32)]
+pub enum XIPropertyEventChange {
+    Created = xinput2_sys::XIPropertyCreated,
+    Deleted = xinput2_sys::XIPropertyDeleted,
+    Modified = xinput2_sys::XIPropertyModified,
+}
+
+impl XIPropertyEventChange {
+    /// Wraps an existing XInput2 property event change.
+    ///
+    /// # Arguments
+    ///
+    /// * `change` - The XInput2 property event change to wrap
+    ///
+    /// # Panics
+    ///
+    /// If the given property event change is not valid.
+    pub fn new(change: i32) -> Self {
+        match change {
+            xinput2_sys::XIPropertyCreated => Self::Created,
+            xinput2_sys::XIPropertyDeleted => Self::Deleted,
+            xinput2_sys::XIPropertyModified => Self::Modified,
+            x => unreachable!("Unknown XI property event change {}", x),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct XIPropertyEvent<'a> {
+    time: u64,
+    device: XInputDevice,
+    property: XAtom<'a>,
+    what: XIPropertyEventChange,
+}
+
+impl<'a> XIPropertyEvent<'a> {
+    /// Converts the XInput2 property event data from its native representation.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The X native event
+    /// * `display` - The display the event belongs to
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure all arguments are valid.
+    pub unsafe fn new(event: xinput2_sys::XIPropertyEvent, display: &'a XDisplay) -> Self {
+        Self {
+            time: event.time,
+            device: XInputDevice::from_id(event.deviceid),
+            property: XAtom::new(event.property, display),
+            what: XIPropertyEventChange::new(event.what),
+        }
+    }
+
+    /// Retrieves the timestamp this event occurred at.
+    pub fn time(&self) -> u64 {
+        self.time
+    }
+
+    /// Retrieves the device that changed.
+    pub fn device(&self) -> XInputDevice {
+        self.device
+    }
+
+    /// Retrieves the property that changed.
+    pub fn property(&self) -> &XAtom<'a> {
+        &self.property
+    }
+
+    /// Retrieves what happened.
+    pub fn what(&self) -> XIPropertyEventChange {
+        self.what
     }
 }
