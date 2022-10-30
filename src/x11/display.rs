@@ -1,6 +1,6 @@
 use crate::{
     xfixes_sys, xlib_sys, XBitmapPadding, XCursorImage, XEvent, XFont, XImage, XImageFormat,
-    XVisual,
+    XVisual, XWindow,
 };
 use crate::{XAtom, XLibError, XScreen};
 use std::ffi::{CStr, CString};
@@ -319,6 +319,49 @@ impl XDisplay {
     /// Retrieves the current cursor image.
     pub fn get_cursor_image(&self) -> XCursorImage {
         unsafe { XCursorImage::new(xfixes_sys::XFixesGetCursorImage(self.handle)) }
+    }
+
+    /// Moves the mouse pointer to a specific position.
+    ///
+    /// # Arguments
+    ///
+    /// * `source_window` - If given, the pointer is only moved if it is currently in this window
+    /// * `destination_window` - The window to move the pointer relative to
+    /// * `source_rect` - (x, y, width, height) rectangle, if given the pointer is only moved if it
+    ///                   currently is in [`source_window`] and this rectangle within
+    /// * `dest_x` - X coordinate to move the pointer to relative to [`destination_window`]
+    /// * `dest_y` - Y coordinate to move the pointer relative to [`destination_window`]
+    pub fn warp_pointer(
+        &self,
+        source_window: Option<&XWindow>,
+        destination_window: &XWindow,
+        source_rect: Option<(usize, usize, usize, usize)>,
+        dest_x: usize,
+        dest_y: usize,
+    ) {
+        if source_rect.is_some() {
+            assert!(
+                source_window.is_some(),
+                "Can only specify a source rect if a source window is given"
+            );
+        }
+
+        let source_window = source_window.map(|w| w.handle()).unwrap_or(0);
+        let (src_x, src_y, src_width, src_height) = source_rect.unwrap_or((0, 0, 0, 0));
+
+        unsafe {
+            xlib_sys::XWarpPointer(
+                self.handle,
+                source_window,
+                destination_window.handle(),
+                src_x as _,
+                src_y as _,
+                src_width as _,
+                src_height as _,
+                dest_x as _,
+                dest_y as _,
+            )
+        };
     }
 
     /// Retrieves the event base id for xfixes events.
