@@ -1,6 +1,6 @@
 use crate::{
-    xfixes_sys, xlib_sys, XBitmapPadding, XCursorImage, XEvent, XFont, XImage, XImageFormat,
-    XVisual, XWindow,
+    xfixes_sys, xlib_sys, xtest_sys, XBitmapPadding, XCursorImage, XEvent, XFont, XImage,
+    XImageFormat, XVisual, XWindow,
 };
 use crate::{XAtom, XLibError, XScreen};
 use std::ffi::{CStr, CString};
@@ -362,6 +362,56 @@ impl XDisplay {
                 dest_y as _,
             )
         };
+    }
+
+    /// Sends a fake key event.
+    ///
+    /// # Arguments
+    ///
+    /// `keycode` - The keycode to fake
+    /// `press` - Whether the key is being released or pressed
+    /// `delay` - How many milliseconds to wait before sending the event
+    pub fn fake_key_event(&self, keycode: u32, press: bool, delay: u64) {
+        unsafe { xtest_sys::XTestFakeKeyEvent(self.handle, keycode, press as _, delay) };
+    }
+
+    /// Sends a fake button event.
+    ///
+    /// # Arguments
+    ///
+    /// `button` - The button to fake
+    /// `press` - Whether the key is being released or pressed
+    /// `delay` - How many milliseconds to wait before sending the event
+    pub fn fake_button_event(&self, button: u32, press: bool, delay: u64) {
+        unsafe { xtest_sys::XTestFakeButtonEvent(self.handle, button, press as _, delay) };
+    }
+
+    /// Sends a fake motion event.
+    ///
+    /// # Arguments
+    ///
+    /// `screen_number` - The number of the screen the event should occur on, or [`None`] for current
+    /// `x` - The X position the motion moved to
+    /// `y` - The Y position the motion moved to
+    /// `delay` - How many milliseconds to wait before sending the event
+    /// `relative` - Whether X and Y are relative to the current position or absolute
+    pub fn fake_motion_event(
+        &self,
+        screen_number: Option<u32>,
+        x: i32,
+        y: i32,
+        delay: u64,
+        relative: bool,
+    ) {
+        let screen_number = screen_number.map(|v| v as i32).unwrap_or(-1);
+
+        if relative {
+            unsafe {
+                xtest_sys::XTestFakeRelativeMotionEvent(self.handle, screen_number, x, y, delay)
+            };
+        } else {
+            unsafe { xtest_sys::XTestFakeMotionEvent(self.handle, screen_number, x, y, delay) };
+        }
     }
 
     /// Retrieves the event base id for xfixes events.

@@ -18,3 +18,4 @@ pub use ::x11::xfixes as xfixes_sys;
 pub use ::x11::xinput2 as xinput2_sys;
 pub use ::x11::xlib as xlib_sys;
 pub use ::x11::xrandr as xrandr_sys;
+pub use ::x11::xtest as xtest_sys;
