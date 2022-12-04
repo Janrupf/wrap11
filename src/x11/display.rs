@@ -414,6 +414,19 @@ impl XDisplay {
         }
     }
 
+    /// Retrieves the minimum and maximum number of keycodes supported.
+    pub fn keycodes(&self) -> (u8, u8) {
+        let mut min_supported = 0;
+        let mut max_supported = 0;
+
+        unsafe { xlib_sys::XDisplayKeycodes(self.handle, &mut min_supported, &mut max_supported) };
+
+        debug_assert!((8..=255).contains(&min_supported));
+        debug_assert!(max_supported >= min_supported && max_supported <= 255);
+
+        (min_supported as _, max_supported as _)
+    }
+
     /// Retrieves the event base id for xfixes events.
     pub fn xfixes_event_base(&self) -> i32 {
         self.xfixes_event_base

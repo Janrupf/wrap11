@@ -13,6 +13,7 @@ pub use glx::*;
 
 pub use ::x11::glx as glx_sys;
 pub use ::x11::glx::arb as glx_arb_sys;
+pub use ::x11::keysym as xkeysym_sys;
 pub use ::x11::xcomposite as xcomposite_sys;
 pub use ::x11::xfixes as xfixes_sys;
 pub use ::x11::xinput2 as xinput2_sys;

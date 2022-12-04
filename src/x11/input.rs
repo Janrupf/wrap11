@@ -1,6 +1,6 @@
 use crate::{
-    xinput2_sys, XAtom, XDisplay, XPropertyChangeMode, XPropertyData, XPropertyDataFormat,
-    XPropertyHolder,
+    xinput2_sys, xlib_sys, XAtom, XDisplay, XPropertyChangeMode, XPropertyData,
+    XPropertyDataFormat, XPropertyHolder,
 };
 use x11::xinput2;
 
@@ -42,6 +42,44 @@ impl<'a> XInputDevice<'a> {
         Self {
             id: xinput2::XIAllMasterDevices,
             display,
+        }
+    }
+
+    /// Retrieves the id of the device.
+    pub fn id(&self) -> i32 {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct XKeyboardDevice<'a> {
+    _display: &'a XDisplay,
+    id: i32,
+}
+
+impl<'a> XKeyboardDevice<'a> {
+    /// Wraps an existing XKbd device.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the device to wrap
+    /// * `display` - The display the device belongs to
+    pub fn from_id(id: i32, display: &'a XDisplay) -> Self {
+        Self {
+            id,
+            _display: display,
+        }
+    }
+
+    /// Creates an Xkbd device which represents the main (core) keyboard.
+    ///
+    /// # Arguments
+    ///
+    /// * `display` - The display the device belongs to
+    pub fn core(display: &'a XDisplay) -> Self {
+        Self {
+            id: xlib_sys::XkbUseCoreKbd as _,
+            _display: display,
         }
     }
 
