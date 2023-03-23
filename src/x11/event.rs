@@ -143,6 +143,7 @@ impl PropertyState {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct InputModifierMask: u32 {
         /// Mouse button 1 is down
         const BUTTON_1 = xlib_sys::Button1Mask;
@@ -1036,7 +1037,7 @@ impl<'a> XMotionEvent<'a> {
             y: event.y,
             x_root: event.x_root,
             y_root: event.y_root,
-            state: InputModifierMask::from_bits_unchecked(event.state),
+            state: InputModifierMask::from_bits_retain(event.state),
             is_hint: (event.is_hint as i32) == xlib_sys::NotifyHint,
             same_screen: event.same_screen != 0,
         }
@@ -1130,7 +1131,7 @@ impl<'a> XButtonEvent<'a> {
             y: event.y,
             x_root: event.x_root,
             y_root: event.y_root,
-            state: InputModifierMask::from_bits_unchecked(event.state),
+            state: InputModifierMask::from_bits_retain(event.state),
             button: event.button,
             same_screen: event.same_screen != 0,
         }
@@ -1224,7 +1225,7 @@ impl<'a> XKeyEvent<'a> {
             y: event.y,
             x_root: event.x_root,
             y_root: event.y_root,
-            state: InputModifierMask::from_bits_unchecked(event.state),
+            state: InputModifierMask::from_bits_retain(event.state),
             keycode: event.keycode,
             same_screen: event.same_screen != 0,
         }
@@ -1364,7 +1365,7 @@ impl<'a> XCrossingEvent<'a> {
             detail: NotifyDetail::new(event.detail),
             same_screen: event.same_screen != 0,
             focus: event.focus != 0,
-            state: InputModifierMask::from_bits_unchecked(event.state),
+            state: InputModifierMask::from_bits_retain(event.state),
         }
     }
 
@@ -2423,6 +2424,7 @@ impl<'a> XDisplayCursorEvent<'a> {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct XIHierarchyChangeFlags: i32 {
         /// A master device has been added.
         const MASTER_ADDED = xinput2_sys::XIMasterAdded;
@@ -2472,7 +2474,7 @@ impl<'a> XIHierarchyInfo<'a> {
             attachment: handle.attachment,
             usage: handle._use,
             enabled: handle.enabled != 0,
-            flags: unsafe { XIHierarchyChangeFlags::from_bits_unchecked(handle.flags) },
+            flags: XIHierarchyChangeFlags::from_bits_retain(handle.flags),
         }
     }
 
@@ -2576,6 +2578,7 @@ impl XIScrollType {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct XIScrollFlags: i32 {
         /// No legacy events will be emulated.
         const NO_EMULATION = xinput2_sys::XIScrollFlagNoEmulation;
@@ -2711,7 +2714,7 @@ impl<'a> XIClassInfo<'a> {
                     number: handle.number,
                     ty: XIScrollType::new(handle.scroll_type),
                     increment: handle.increment,
-                    flags: XIScrollFlags::from_bits_unchecked(handle.flags),
+                    flags: XIScrollFlags::from_bits_retain(handle.flags),
                 }
             }
             xinput2_sys::XITouchClass => {
@@ -2751,7 +2754,7 @@ impl<'a> XIHierarchyEvent<'a> {
 
         Self {
             time: event.time,
-            flags: XIHierarchyChangeFlags::from_bits_unchecked(event.flags),
+            flags: XIHierarchyChangeFlags::from_bits_retain(event.flags),
             info: info
                 .iter()
                 .map(|i| XIHierarchyInfo::new(*i, display))
@@ -2863,6 +2866,7 @@ impl<'a> XIDeviceChangedEvent<'a> {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct XIDeviceEventFlags: i32 {
         /// Key event is repeated.
         const KEY_REPEAT = xinput2_sys::XIKeyRepeat;
@@ -3012,7 +3016,7 @@ impl<'a> XIDeviceEvent<'a> {
             root_y: event.root_y,
             event_x: event.event_x,
             event_y: event.event_y,
-            flags: XIDeviceEventFlags::from_bits_unchecked(event.flags),
+            flags: XIDeviceEventFlags::from_bits_retain(event.flags),
             buttons: XIButtonState::new(buttons.to_vec()),
             valuators,
             modifiers: XIModifierState::new(event.mods),
@@ -3150,7 +3154,7 @@ impl<'a> XIRawEvent<'a> {
             device: XInputDevice::from_id(event.deviceid, display),
             source: XInputDevice::from_id(event.sourceid, display),
             detail: event.detail,
-            flags: XIDeviceEventFlags::from_bits_unchecked(event.flags),
+            flags: XIDeviceEventFlags::from_bits_retain(event.flags),
             valuators,
             raw_values,
         }
@@ -3193,6 +3197,7 @@ impl<'a> XIRawEvent<'a> {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct XITouchOwnershipEventFlags: i32 {}
 }
 
@@ -3228,7 +3233,7 @@ impl<'a> XITouchOwnershipEvent<'a> {
             root: XWindow::new(event.root, display, WindowHandleOwnership::Foreign),
             event: XWindow::new(event.event, display, WindowHandleOwnership::Foreign),
             child: XWindow::new(event.child, display, WindowHandleOwnership::Foreign),
-            flags: XITouchOwnershipEventFlags::from_bits_unchecked(event.flags),
+            flags: XITouchOwnershipEventFlags::from_bits_retain(event.flags),
         }
     }
 
@@ -3274,6 +3279,7 @@ impl<'a> XITouchOwnershipEvent<'a> {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct XIBarrierEventFlags: i32 {
         /// The pointer has been released from the barrier.
         const POINTER_RELEASED = xinput2_sys::XIBarrierPointerReleased;
@@ -3323,7 +3329,7 @@ impl<'a> XIBarrierEvent<'a> {
             dx: event.dx,
             dy: event.dy,
             dtime: event.dtime,
-            flags: XIBarrierEventFlags::from_bits_unchecked(event.flags),
+            flags: XIBarrierEventFlags::from_bits_retain(event.flags),
             barrier: event.barrier,
             event_id: event.eventid,
         }

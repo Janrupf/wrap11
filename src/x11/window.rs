@@ -208,12 +208,12 @@ impl<'creation, 'a> SetWindowAttributes<'creation, 'a> {
         }
 
         if let Some(event_mask) = self.event_mask {
-            native.event_mask = event_mask.bits;
+            native.event_mask = event_mask.bits();
             mask |= xlib_sys::CWEventMask;
         }
 
         if let Some(do_not_propagate_mask) = self.do_not_propagate_mask {
-            native.do_not_propagate_mask = do_not_propagate_mask.bits;
+            native.do_not_propagate_mask = do_not_propagate_mask.bits();
             mask |= xlib_sys::CWDontPropagate;
         }
 
@@ -246,6 +246,7 @@ pub enum WindowHandleOwnership {
 
 bitflags::bitflags! {
     /// Determines which events are sent to the X11 client.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct WindowInputMask: i64 {
         /// No events are sent at all
         const NO_EVENT_MASK = xlib_sys::NoEventMask;
@@ -515,13 +516,17 @@ impl<'a> XWindow<'a> {
 
     /// Selects the input mask for the window
     pub fn select_input(&self, mask: WindowInputMask) {
-        unsafe { xlib_sys::XSelectInput(self.display.handle(), self.handle, mask.bits) };
+        unsafe { xlib_sys::XSelectInput(self.display.handle(), self.handle, mask.bits()) };
     }
 
     /// Selects the cursor input mask for the window
     pub fn select_cursor_input(&self, mask: CursorInputMask) {
         unsafe {
-            xfixes_sys::XFixesSelectCursorInput(self.display.handle(), self.handle, mask.bits as _)
+            xfixes_sys::XFixesSelectCursorInput(
+                self.display.handle(),
+                self.handle,
+                mask.bits() as _,
+            )
         }
     }
 
@@ -531,7 +536,7 @@ impl<'a> XWindow<'a> {
         let mut raw_event_masks = Vec::with_capacity(mask.len());
 
         for (device, mask) in mask {
-            let numeric_mask = mask.bits;
+            let numeric_mask = mask.bits();
             event_mask_bytes.push(numeric_mask);
 
             let numeric_mask_ptr =

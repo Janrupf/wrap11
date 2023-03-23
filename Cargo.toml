@@ -9,10 +9,10 @@ license = "MIT"
 
 [target.'cfg(unix)'.dependencies]
 x11 = { version = "2.19.1", features = ["xlib", "glx", "xrandr", "xcomposite", "xfixes", "xtest"] }
-libc = "0.2.135"
-thiserror = "1.0.32"
-bitflags = "1.3.2"
-mio = { version = "0.8.4", features = ["os-ext", "os-poll"], optional = true }
+libc = "0.2.140"
+thiserror = "1.0.40"
+bitflags = "2.0.2"
+mio = { version = "0.8.6", features = ["os-ext", "os-poll"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 
@@ -23,4 +23,4 @@ cargo-emit = "0.2.1"
 connection-poll = ["mio"]
 
 [patch.crates-io]
-x11 = { git = "https://github.com/Janrupf/x11-rs", rev = "94d3053f6ad32e8b73eee3624a747bea8abfa008" }
+x11 = { git = "https://github.com/Janrupf/x11-rs", rev = "1563167aaef4b5c397ae92b4585ba39c3f523b88" }
