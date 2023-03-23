@@ -22,4 +22,4 @@ cargo-emit = "0.2.1"
 connection-poll = ["mio"]
 
 [patch.crates-io]
-x11 = { git = "https://github.com/Janrupf/x11-rs", rev = "37e152933b06d94c7c3115997571ff4258415f9a" }
+x11 = { git = "https://github.com/Janrupf/x11-rs", rev = "94d3053f6ad32e8b73eee3624a747bea8abfa008" }
