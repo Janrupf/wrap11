@@ -1,9 +1,7 @@
-use crate::{GLXError, XDisplay};
-
 use crate::glx_sys;
+use crate::{xlib_sys, GLXError, XDisplay};
 use crate::{XVisual, XVisualInfo};
 use x11::glx::{glXGetFBConfigAttrib, glXGetVisualFromFBConfig, GLX_BAD_ATTRIBUTE};
-use x11::xlib::XFree;
 
 /// Wrapped array of GLX framebuffer configurations.
 #[derive(Debug)]
@@ -69,7 +67,7 @@ impl<'a> GLXFBConfigArray<'a> {
 
 impl<'a> Drop for GLXFBConfigArray<'a> {
     fn drop(&mut self) {
-        unsafe { XFree(self.handle as _) };
+        unsafe { xlib_sys::XFree(self.handle as _) };
         self.display.sync(false);
     }
 }
@@ -154,7 +152,14 @@ impl<'a> GLXFBConfig<'a> {
         if handle.is_null() {
             None
         } else {
-            Some(unsafe { XVisualInfo::new(handle, XVisual::new((*handle).visual)) })
+            let owned_handle = unsafe {
+                let owned_handle = *handle;
+                xlib_sys::XFree(handle as _);
+
+                owned_handle
+            };
+
+            Some(unsafe { XVisualInfo::new(owned_handle, XVisual::new((*handle).visual)) })
         }
     }
 

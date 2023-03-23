@@ -1,8 +1,24 @@
 use crate::ext::edid::MonitorDescriptor;
-use crate::{xlib_sys, xrandr_sys, XAtom};
+use crate::{
+    xcomposite_sys, xfixes_sys, xlib_sys, xrandr_sys, ColormapAllocation, ColormapHandleOwnership,
+    SetWindowAttributes, WindowClass, WindowHandleOwnership, XAtom, XColormap, XRectangle,
+    XServerRegion, XVisual, XVisualInfo,
+};
 use crate::{XDisplay, XWindow};
 use std::io::Cursor;
+use std::mem::MaybeUninit;
 use std::slice;
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(i32)]
+pub enum VisualClass {
+    StaticGray = xlib_sys::StaticGray,
+    GrayScale = xlib_sys::GrayScale,
+    StaticColor = xlib_sys::StaticColor,
+    PseudoColor = xlib_sys::PseudoColor,
+    TrueColor = xlib_sys::TrueColor,
+    DirectColor = xlib_sys::DirectColor,
+}
 
 /// XRandR info about a connected monitor.
 #[derive(Debug)]
@@ -91,7 +107,159 @@ impl<'a> XScreen<'a> {
     ///
     /// The root window is the top level background window which spans the entire screen.
     pub fn root_window(&self) -> XWindow<'a> {
-        unsafe { XWindow::new((*self.handle).root, self.display) }
+        unsafe {
+            XWindow::new(
+                (*self.handle).root,
+                self.display,
+                WindowHandleOwnership::Foreign,
+            )
+        }
+    }
+
+    /// Retrieves the composite window of the screen.
+    ///
+    /// The composite window is a window, which lies on top of all other windows
+    /// but receives no input events.
+    pub fn composite_window(&self) -> XWindow<'a> {
+        unsafe {
+            let window = xcomposite_sys::XCompositeGetOverlayWindow(
+                self.display.handle(),
+                (*self.handle).root,
+            );
+            XWindow::new(
+                window,
+                self.display,
+                WindowHandleOwnership::OwnedCompositeOverlay,
+            )
+        }
+    }
+
+    /// Retrieves the default visual of the screen.
+    pub fn default_visual(&self) -> XVisual<'a> {
+        unsafe {
+            let visual = xlib_sys::XDefaultVisual(self.display.handle(), self.number());
+            XVisual::new(visual)
+        }
+    }
+
+    /// Attempts to find a visual matching certain criteria for the screen.
+    ///
+    /// # Arguments
+    ///
+    /// * `depth` - The color depth in bits to look up
+    /// * `class` - The class of the visual to look up
+    pub fn match_visual(&self, depth: i32, class: VisualClass) -> Option<XVisualInfo<'a>> {
+        let mut info_out = MaybeUninit::uninit();
+
+        unsafe {
+            if xlib_sys::XMatchVisualInfo(
+                self.display.handle(),
+                self.number(),
+                depth,
+                class as _,
+                info_out.as_mut_ptr(),
+            ) == 0
+            {
+                return None;
+            }
+
+            let info = info_out.assume_init();
+            Some(XVisualInfo::new(info, XVisual::new(info.visual)))
+        }
+    }
+
+    /// Creates a new colormap.
+    ///
+    /// # Arguments
+    ///
+    /// * `visual` - The visual to create the colormap for
+    /// * `allocation` - The initial colormap allocation
+    pub fn create_colormap(
+        &self,
+        visual: &XVisual<'a>,
+        allocation: ColormapAllocation,
+    ) -> XColormap<'a> {
+        unsafe {
+            let colormap = xlib_sys::XCreateColormap(
+                self.display.handle(),
+                self.root_window().handle(),
+                visual.handle(),
+                allocation as _,
+            );
+
+            XColormap::new(colormap, self.display, ColormapHandleOwnership::Owned)
+        }
+    }
+
+    /// Creates a new simple window on this screen..
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x coordinate of the window
+    /// * `y` - The y coordinate of the window
+    /// * `width` - The width in pixels of the inside window area excluding the border
+    /// * `height` - The height in pixels of the inside window area excluding the border
+    /// * `border_width` - The width of the window border in pixels
+    /// * `border` - The border pixel value of the window
+    /// * `background` - The background pixel value of the window
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_simple_window(
+        &self,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        border_width: u32,
+        border: u64,
+        background: u64,
+    ) -> XWindow<'a> {
+        self.root_window().create_simple_child_window(
+            x,
+            y,
+            width,
+            height,
+            border_width,
+            border,
+            background,
+        )
+    }
+
+    /// Creates a new child window of this window.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x coordinate of the window, relative to the inside border of this window
+    /// * `y` - The y coordinate of the window, relative to the inside border of this window
+    /// * `width` - The width in pixels of the inside window area excluding the border
+    /// * `height` - The height in pixels of the inside window area excluding the border
+    /// * `border_width` - The width of the window border in pixels
+    /// * `depth` - The depth value of the window
+    /// * `visual` - The visual type of the window
+    /// * `attributes` - The attributes to set on the window
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_window<'creation>(
+        &'creation self,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        border_width: u32,
+        depth: i32,
+        class: WindowClass,
+        visual: &'creation XVisual<'a>,
+        attributes: SetWindowAttributes<'creation, 'a>,
+    ) -> XWindow {
+        self.root_window().create_child_window(
+            x,
+            y,
+            width,
+            height,
+            border_width,
+            depth,
+            class,
+            visual,
+            attributes,
+        )
     }
 
     /// Retrieves all monitors connected to this screen.
@@ -191,5 +359,32 @@ impl<'a> XScreen<'a> {
         }
 
         out
+    }
+
+    /// Creates a new region.
+    ///
+    /// # Arguments
+    ///
+    /// * `rectangles` - The rectangles to compose the region of
+    pub fn create_region(&self, rectangles: &[XRectangle]) -> XServerRegion {
+        let mut rectangles = rectangles
+            .iter()
+            .map(|r| xlib_sys::XRectangle {
+                x: r.x,
+                y: r.y,
+                width: r.width,
+                height: r.height,
+            })
+            .collect::<Vec<_>>();
+
+        unsafe {
+            let region = xfixes_sys::XFixesCreateRegion(
+                self.display.handle(),
+                rectangles.as_mut_ptr(),
+                rectangles.len() as _,
+            );
+
+            XServerRegion::new(region, self.display)
+        }
     }
 }

@@ -1,9 +1,233 @@
-use crate::xlib_sys;
-use crate::{XAtom, XDisplay, XDrawable, XScreen, XVisual};
+use crate::{
+    xcomposite_sys, xfixes_sys, xlib_sys, XAtom, XColormap, XCursor, XDisplay, XDrawable, XPixmap,
+    XScreen, XServerRegion, XVisual,
+};
+use std::ffi::CString;
 
 use std::fmt::Debug;
 use std::mem::MaybeUninit;
-use x11::xlib::Drawable;
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(i32)]
+pub enum WindowShapeKind {
+    Bounding = 0,
+    Clip = 1,
+    Input = 2,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(i32)]
+pub enum WindowClass {
+    InputOnly = xlib_sys::InputOnly,
+    InputOutput = xlib_sys::InputOutput,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(i32)]
+pub enum BackingWindowStore {
+    NotUseful = xlib_sys::NotUseful,
+    WhenMapped = xlib_sys::WhenMapped,
+    Always = xlib_sys::Always,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct SetWindowAttributes<'creation, 'a> {
+    background_pixmap: Option<&'creation XPixmap<'a>>,
+    background_pixel: Option<u64>,
+    border_pixmap: Option<&'creation XPixmap<'a>>,
+    border_pixel: Option<u64>,
+    bit_gravity: Option<i32>,
+    win_gravity: Option<i32>,
+    backing_store: Option<BackingWindowStore>,
+    backing_planes: Option<u64>,
+    backing_pixels: Option<u64>,
+    save_under: Option<bool>,
+    event_mask: Option<WindowInputMask>,
+    do_not_propagate_mask: Option<WindowInputMask>,
+    override_redirect: Option<bool>,
+    colormap: Option<&'creation XColormap<'a>>,
+    cursor: Option<&'creation XCursor<'a>>,
+}
+
+impl<'creation, 'a> SetWindowAttributes<'creation, 'a> {
+    /// Creates a new set of window attributes without any set.
+    pub fn new() -> Self {
+        SetWindowAttributes::default()
+    }
+
+    /// Sets the window background pixmap.
+    pub fn background_pixmap(&mut self, pixmap: &'creation XPixmap<'a>) -> &mut Self {
+        self.background_pixmap = Some(pixmap);
+        self
+    }
+
+    /// Sets the window background pixel.
+    pub fn background_pixel(&mut self, pixel: u64) -> &mut Self {
+        self.background_pixel = Some(pixel);
+        self
+    }
+
+    /// Sets the window border pixmap.
+    pub fn border_pixmap(&mut self, pixmap: &'creation XPixmap<'a>) -> &mut Self {
+        self.border_pixmap = Some(pixmap);
+        self
+    }
+
+    /// Sets the window border pixel.
+    pub fn border_pixel(&mut self, pixel: u64) -> &mut Self {
+        self.border_pixel = Some(pixel);
+        self
+    }
+
+    /// Sets the window bit gravity.
+    pub fn bit_gravity(&mut self, gravity: i32) -> &mut Self {
+        self.bit_gravity = Some(gravity);
+        self
+    }
+
+    /// Sets the window gravity.
+    pub fn window_gravity(&mut self, gravity: i32) -> &mut Self {
+        self.win_gravity = Some(gravity);
+        self
+    }
+
+    /// Sets the window backing store.
+    pub fn backing_store(&mut self, backing_store: BackingWindowStore) -> &mut Self {
+        self.backing_store = Some(backing_store);
+        self
+    }
+
+    /// Sets the window backing planes.
+    pub fn backing_planes(&mut self, planes: u64) -> &mut Self {
+        self.backing_planes = Some(planes);
+        self
+    }
+
+    /// Sets the window backing pixel.
+    pub fn backing_pixels(&mut self, pixels: u64) -> &mut Self {
+        self.backing_pixels = Some(pixels);
+        self
+    }
+
+    /// Sets whether bits under should be saved.
+    pub fn save_under(&mut self, save: bool) -> &mut Self {
+        self.save_under = Some(save);
+        self
+    }
+
+    /// Sets the window event mask.
+    pub fn event_mask(&mut self, mask: WindowInputMask) -> &mut Self {
+        self.event_mask = Some(mask);
+        self
+    }
+
+    /// Sets the window do-not-propagate mask.
+    pub fn do_not_propagate_mask(&mut self, mask: WindowInputMask) -> &mut Self {
+        self.do_not_propagate_mask = Some(mask);
+        self
+    }
+
+    /// Sets whether override redirect is enabled for this window.
+    pub fn override_redirect(&mut self, override_redirect: bool) -> &mut Self {
+        self.override_redirect = Some(override_redirect);
+        self
+    }
+
+    /// Sets the window colormap.
+    pub fn colormap(&mut self, colormap: &'creation XColormap<'a>) -> &mut Self {
+        self.colormap = Some(colormap);
+        self
+    }
+
+    /// Sets the window cursor.
+    pub fn cursor(&mut self, cursor: &'creation XCursor<'a>) -> &mut Self {
+        self.cursor = Some(cursor);
+        self
+    }
+
+    /// Turns this struct into its native representation along with the associated value mask.
+    pub fn into_native(self) -> (u64, xlib_sys::XSetWindowAttributes) {
+        let mut mask = 0;
+        let mut native = unsafe { std::mem::zeroed::<xlib_sys::XSetWindowAttributes>() };
+
+        if let Some(pixmap) = self.background_pixmap {
+            native.background_pixmap = pixmap.handle();
+            mask |= xlib_sys::CWBackPixmap;
+        }
+
+        if let Some(pixel) = self.background_pixel {
+            native.background_pixel = pixel;
+            mask |= xlib_sys::CWBackPixel;
+        }
+
+        if let Some(pixmap) = self.border_pixmap {
+            native.border_pixmap = pixmap.handle();
+            mask |= xlib_sys::CWBorderPixmap;
+        }
+
+        if let Some(pixel) = self.border_pixel {
+            native.border_pixel = pixel;
+            mask |= xlib_sys::CWBorderPixel;
+        }
+
+        if let Some(gravity) = self.bit_gravity {
+            native.bit_gravity = gravity;
+            mask |= xlib_sys::CWBitGravity;
+        }
+
+        if let Some(gravity) = self.win_gravity {
+            native.win_gravity = gravity;
+            mask |= xlib_sys::CWWinGravity;
+        }
+
+        if let Some(store) = self.backing_store {
+            native.backing_store = store as _;
+            mask |= xlib_sys::CWBackingStore;
+        }
+
+        if let Some(planes) = self.backing_planes {
+            native.backing_planes = planes;
+            mask |= xlib_sys::CWBackingPlanes;
+        }
+
+        if let Some(pixel) = self.backing_pixels {
+            native.backing_pixel = pixel;
+            mask |= xlib_sys::CWBackingPixel;
+        }
+
+        if let Some(override_redirect) = self.override_redirect {
+            native.override_redirect = override_redirect as _;
+            mask |= xlib_sys::CWOverrideRedirect;
+        }
+
+        if let Some(save_under) = self.save_under {
+            native.save_under = save_under as _;
+            mask |= xlib_sys::CWSaveUnder;
+        }
+
+        if let Some(event_mask) = self.event_mask {
+            native.event_mask = event_mask.bits;
+            mask |= xlib_sys::CWEventMask;
+        }
+
+        if let Some(do_not_propagate_mask) = self.do_not_propagate_mask {
+            native.do_not_propagate_mask = do_not_propagate_mask.bits;
+            mask |= xlib_sys::CWDontPropagate;
+        }
+
+        if let Some(colormap) = self.colormap {
+            native.colormap = colormap.handle();
+            mask |= xlib_sys::CWColormap;
+        }
+
+        if let Some(cursor) = self.cursor {
+            native.cursor = cursor.handle();
+            mask |= xlib_sys::CWCursor;
+        }
+
+        (mask, native)
+    }
+}
 
 /// Describes the possible format of a X11 window property.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -191,26 +415,135 @@ impl WindowPropertyChangeMode {
     }
 }
 
+/// Describes how a window handle is owned
+#[derive(Debug)]
+pub enum WindowHandleOwnership {
+    /// The window handle is not owned at all
+    Foreign,
+
+    /// The window is our own handle
+    Owned,
+
+    /// The window handle is owned by us, but is the composite window
+    OwnedCompositeOverlay,
+}
+
+bitflags::bitflags! {
+    /// Determines which events are sent to the X11 client.
+    pub struct WindowInputMask: i64 {
+        /// No events are sent at all
+        const NO_EVENT_MASK = xlib_sys::NoEventMask;
+
+        /// Keyboard key press events are sent
+        const KEY_PRESS = xlib_sys::KeyPressMask;
+
+        /// Keyboard key release events are sent
+        const KEY_RELEASE = xlib_sys::KeyReleaseMask;
+
+        /// Mouse button press events are sent
+        const BUTTON_PRESS = xlib_sys::ButtonPressMask;
+
+        /// Mouse button release events are sent
+        const BUTTON_RELEASE = xlib_sys::ButtonReleaseMask;
+
+        /// Events when the mouse enters the window are sent
+        const ENTER_WINDOW = xlib_sys::EnterWindowMask;
+
+        /// Events when the mouse leaves the window are sent
+        const LEAVE_WINDOW = xlib_sys::LeaveWindowMask;
+
+        /// Events when the mouse pointer is moving are sent
+        const POINTER_MOTION = xlib_sys::PointerMotionMask;
+
+        /// Events when the mouse pointer is moving are sent, but without metadata
+        const POINTER_MOTION_HINT = xlib_sys::PointerMotionHintMask;
+
+        /// Events when the mouse pointer is moving and button 1 is pressed are sent
+        const BUTTON_1_MOTION = xlib_sys::Button1MotionMask;
+
+        /// Events when the mouse pointer is moving and button 2 is pressed are sent
+        const BUTTON_2_MOTION = xlib_sys::Button2MotionMask;
+
+        /// Events when the mouse pointer is moving and button 3 is pressed are sent
+        const BUTTON_3_MOTION = xlib_sys::Button3MotionMask;
+
+        /// Events when the mouse pointer is moving and button 4 is pressed are sent
+        const BUTTON_4_MOTION = xlib_sys::Button4MotionMask;
+
+        /// Events when the mouse pointer is moving and button 5 is pressed are sent
+        const BUTTON_5_MOTION = xlib_sys::Button5MotionMask;
+
+        /// Events when the mouse pointer is moving and any button is pressed are sent
+        const BUTTON_MOTION = xlib_sys::ButtonMotionMask;
+
+        /// Events when the keymap changes are sent
+        const KEYMAP_STATE = xlib_sys::KeymapStateMask;
+
+        /// Events when the window has been exposed are sent
+        const EXPOSURE = xlib_sys::ExposureMask;
+
+        /// Events when the window visibility changes are sent
+        const VISIBILITY_CHANGE = xlib_sys::VisibilityChangeMask;
+
+        /// Events are sent when the window hierarchy structure changes
+        const STRUCTURE = xlib_sys::StructureNotifyMask;
+
+        /// Events are sent when the window should be resized
+        const RESIZE_REDIRECT = xlib_sys::ResizeRedirectMask;
+
+        /// Events are sent when the window child hierarchy structure changes
+        const SUBSTRUCTURE = xlib_sys::SubstructureNotifyMask;
+
+        /// Events are sent when the window child hierarchy structure should be changed
+        const SUBSTRUCTURE_REDIRECT = xlib_sys::SubstructureRedirectMask;
+
+        /// Events are sent when the window focus changes
+        const FOCUS_CHANGE = xlib_sys::FocusChangeMask;
+
+        /// Events are sent when a window property changes
+        const PROPERTY_CHANGE = xlib_sys::PropertyChangeMask;
+
+        /// Events are sent when the colormap changes
+        const COLORMAP_CHANGE = xlib_sys::ColormapChangeMask;
+
+        /// Automatic grabs active with owner events
+        const OWNER_GRAB_BUTTON = xlib_sys::OwnerGrabButtonMask;
+    }
+}
+
 /// Represents a window on the X server.
 #[derive(Debug)]
 pub struct XWindow<'a> {
     handle: xlib_sys::Window,
     display: &'a XDisplay,
+    ownership: WindowHandleOwnership,
 }
 
 impl<'a> XWindow<'a> {
     /// Wraps an existing window native X11 window handle.
     ///
+    /// Depending on the ownership type, the window may or may not be destroyed when it goes
+    /// out of scope.
+    ///
     /// # Arguments
     ///
     /// * `handle` - The native X11 window to wrap
     /// * `display` - The X11 display the window belongs to
+    /// * `ownership` - The ownership of the passed window handle
     ///
     /// # Safety
     ///
     /// It is up to the caller to ensure that all arguments are valid.
-    pub unsafe fn new(handle: xlib_sys::Window, display: &'a XDisplay) -> Self {
-        Self { handle, display }
+    pub unsafe fn new(
+        handle: xlib_sys::Window,
+        display: &'a XDisplay,
+        ownership: WindowHandleOwnership,
+    ) -> Self {
+        Self {
+            handle,
+            display,
+            ownership,
+        }
     }
 
     /// Retrieves the underlying native X11 window handle.
@@ -238,6 +571,61 @@ impl<'a> XWindow<'a> {
     /// Clears the content area of the window.
     pub fn clear(&self) {
         unsafe { xlib_sys::XClearWindow(self.display.handle(), self.handle) };
+    }
+
+    /// Clears a part of the content area of the window.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x coordinate to start clearing at
+    /// * `y` - The y coordinate to start clearing at
+    /// * `width` - The width of the area to clear
+    /// * `height` - The height of the area to clear
+    /// * `exposures` - Whether an exposure event should be generated
+    pub fn clear_area(&self, x: i32, y: i32, width: u32, height: u32, exposures: bool) {
+        unsafe {
+            xlib_sys::XClearArea(
+                self.display.handle(),
+                self.handle,
+                x,
+                y,
+                width,
+                height,
+                exposures as _,
+            )
+        };
+    }
+
+    /// Maps the window to screen.
+    pub fn map(&self) {
+        unsafe { xlib_sys::XMapWindow(self.display.handle(), self.handle) };
+    }
+
+    /// Unmaps the window from screen
+    pub fn unmap(&self) {
+        unsafe { xlib_sys::XUnmapWindow(self.display.handle(), self.handle) };
+    }
+
+    /// Selects the input mask for the window
+    pub fn select_input(&self, mask: WindowInputMask) {
+        unsafe { xlib_sys::XSelectInput(self.display.handle(), self.handle, mask.bits) };
+    }
+
+    /// Store the name of the window.
+    ///
+    /// This is usually what gets displayed as the window title.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The new name to store
+    ///
+    /// # Panics
+    ///
+    /// If name contains a nul byte.
+    pub fn store_name(&self, name: impl AsRef<str>) {
+        let name = CString::new(name.as_ref()).unwrap();
+
+        unsafe { xlib_sys::XStoreName(self.display.handle(), self.handle, name.as_ptr()) };
     }
 
     /// Attempts to retrieve a window property.
@@ -432,10 +820,155 @@ impl<'a> XWindow<'a> {
     pub fn delete_property(&self, property: XAtom) {
         unsafe { xlib_sys::XDeleteProperty(self.display.handle(), self.handle, property.handle()) };
     }
+
+    /// Replaces the `WM_PROTOCOLS` property on the window.
+    ///
+    /// # Arguments
+    ///
+    /// * `protocols` - The protocols to set
+    pub fn set_wm_protocols(&self, protocols: &[XAtom<'a>]) {
+        let mut protocols = protocols.iter().map(|v| v.handle()).collect::<Vec<_>>();
+
+        unsafe {
+            xlib_sys::XSetWMProtocols(
+                self.display.handle(),
+                self.handle,
+                protocols.as_mut_ptr(),
+                protocols.len() as _,
+            )
+        };
+    }
+
+    /// Creates a new child window of this window.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x coordinate of the window, relative to the inside border of this window
+    /// * `y` - The y coordinate of the window, relative to the inside border of this window
+    /// * `width` - The width in pixels of the inside window area excluding the border
+    /// * `height` - The height in pixels of the inside window area excluding the border
+    /// * `border_width` - The width of the window border in pixels
+    /// * `border` - The border pixel value of the window
+    /// * `background` - The background pixel value of the window
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_simple_child_window(
+        &self,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        border_width: u32,
+        border: u64,
+        background: u64,
+    ) -> XWindow<'a> {
+        unsafe {
+            let window = xlib_sys::XCreateSimpleWindow(
+                self.display.handle(),
+                self.handle,
+                x,
+                y,
+                width,
+                height,
+                border_width,
+                border,
+                background,
+            );
+
+            XWindow::new(window, self.display, WindowHandleOwnership::Owned)
+        }
+    }
+
+    /// Creates a new child window of this window.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x coordinate of the window, relative to the inside border of this window
+    /// * `y` - The y coordinate of the window, relative to the inside border of this window
+    /// * `width` - The width in pixels of the inside window area excluding the border
+    /// * `height` - The height in pixels of the inside window area excluding the border
+    /// * `border_width` - The width of the window border in pixels
+    /// * `depth` - The depth value of the window
+    /// * `visual` - The visual type of the window
+    /// * `attributes` - The attributes to set on the window
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_child_window<'creation>(
+        &'creation self,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+        border_width: u32,
+        depth: i32,
+        class: WindowClass,
+        visual: &'creation XVisual<'a>,
+        attributes: SetWindowAttributes<'creation, 'a>,
+    ) -> XWindow<'a> {
+        let (value_mask, mut attributes) = attributes.into_native();
+
+        unsafe {
+            let window = xlib_sys::XCreateWindow(
+                self.display.handle(),
+                self.handle,
+                x,
+                y,
+                width,
+                height,
+                border_width,
+                depth,
+                class as _,
+                visual.handle(),
+                value_mask,
+                &mut attributes,
+            );
+
+            XWindow::new(window, self.display, WindowHandleOwnership::Owned)
+        }
+    }
+
+    /// Changes a region of this window.
+    ///
+    /// # Arguments
+    ///
+    /// * `shape_kind` - The kind of shape to adjust
+    /// * `x_offset` - The x coordinate from where to start the region
+    /// * `y_offset` - The y coordinate from where to start the region
+    /// * `region` - The region to apply
+    pub fn set_shape_region(
+        &self,
+        shape_kind: WindowShapeKind,
+        x_offset: i32,
+        y_offset: i32,
+        region: &XServerRegion,
+    ) {
+        unsafe {
+            xfixes_sys::XFixesSetWindowShapeRegion(
+                self.display.handle(),
+                self.handle,
+                shape_kind as _,
+                x_offset,
+                y_offset,
+                region.handle(),
+            );
+        }
+    }
+}
+
+impl<'a> Drop for XWindow<'a> {
+    fn drop(&mut self) {
+        match self.ownership {
+            WindowHandleOwnership::Foreign => {}
+            WindowHandleOwnership::Owned => unsafe {
+                xlib_sys::XDestroyWindow(self.display.handle(), self.handle);
+            },
+            WindowHandleOwnership::OwnedCompositeOverlay => unsafe {
+                xcomposite_sys::XCompositeReleaseOverlayWindow(self.display.handle(), self.handle);
+            },
+        }
+    }
 }
 
 impl<'a> XDrawable<'a> for XWindow<'a> {
-    fn drawable_handle(&self) -> Drawable {
+    fn drawable_handle(&self) -> xlib_sys::Drawable {
         self.handle
     }
 

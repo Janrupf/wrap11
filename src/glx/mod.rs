@@ -181,7 +181,7 @@ impl<'a> GLX<'a> {
         let pixmap = unsafe {
             glx_sys::glXCreateGLXPixmap(
                 self.display.handle(),
-                config.get_visual().unwrap().handle(),
+                &mut config.get_visual().unwrap().handle(),
                 x_pixmap.drawable_handle(),
             )
         };
@@ -199,7 +199,7 @@ impl<'a> GLX<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use snowland_x11_wrapper::GLXError;
+    /// # use desktop_control_x11_wrapper::GLXError;
     /// #
     /// # struct GLX {}
     /// # impl GLX {

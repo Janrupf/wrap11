@@ -25,7 +25,7 @@ pub struct XGeometry {
     pub depth: u32,
 }
 
-/// Represents a drawable object in the X11 protocol.
+/// Represents a drawable object in the X11 mod.
 ///
 /// This is usually implemented for windows and pixmap's.
 pub trait XDrawable<'a>
@@ -78,7 +78,7 @@ where
 
     /// Creates a pixmap matching the width, height and depth of this drawable on the same screen
     /// as this drawable resides on.
-    fn create_matching_pixmap(&'a self) -> XPixmap {
+    fn create_matching_pixmap(&'a self) -> XPixmap<'a> {
         let geometry = self.get_geometry();
 
         self.create_pixmap(geometry.width, geometry.height, geometry.depth)
@@ -91,7 +91,7 @@ where
     /// * `width` - The width of the drawable
     /// * `height` - The height of the drawable
     /// * `depth` - The bit-depth of the drawable
-    fn create_pixmap(&'a self, width: u32, height: u32, depth: u32) -> XPixmap {
+    fn create_pixmap(&'a self, width: u32, height: u32, depth: u32) -> XPixmap<'a> {
         let pixmap = unsafe {
             xlib_sys::XCreatePixmap(
                 self.display().handle(),
