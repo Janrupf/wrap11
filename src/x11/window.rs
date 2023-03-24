@@ -680,6 +680,44 @@ impl<'a> XWindow<'a> {
         }
     }
 
+    /// Retrieves information about the position of the window in the tree.
+    pub fn query_tree(&self) -> XWindowTreeInfo<'a> {
+        let mut root = 0;
+        let mut parent = 0;
+
+        let children = unsafe {
+            let mut children = std::ptr::null_mut();
+            let mut children_len = 0;
+
+            xlib_sys::XQueryTree(
+                self.display.handle(),
+                self.handle,
+                &mut root,
+                &mut parent,
+                &mut children,
+                &mut children_len,
+            );
+
+            if children_len == 0 || children.is_null() {
+                Vec::<XWindow<'a>>::new()
+            } else {
+                let out = std::slice::from_raw_parts(children, children_len as _)
+                    .iter()
+                    .map(|&w| XWindow::new(w, self.display, WindowHandleOwnership::Foreign))
+                    .collect();
+
+                xlib_sys::XFree(children as _);
+
+                out
+            }
+        };
+
+        let root = unsafe { XWindow::new(root, self.display, WindowHandleOwnership::Foreign) };
+        let parent = unsafe { XWindow::new(parent, self.display, WindowHandleOwnership::Foreign) };
+
+        XWindowTreeInfo::new(root, parent, children)
+    }
+
     /// Changes a region of this window.
     ///
     /// # Arguments
@@ -797,6 +835,66 @@ impl<'a> XDrawable<'a> for XWindow<'a> {
 
     fn display(&self) -> &'a XDisplay {
         self.display
+    }
+}
+
+/// The tree around an X11 window.
+#[derive(Debug)]
+pub struct XWindowTreeInfo<'a> {
+    root: XWindow<'a>,
+    parent: XWindow<'a>,
+    children: Vec<XWindow<'a>>,
+}
+
+impl<'a> XWindowTreeInfo<'a> {
+    /// Collects information about the tree around an X11 window.
+    ///
+    /// # Arguments
+    ///
+    /// * `root` - The root window
+    /// * `parent` - The parent window
+    /// * `children` - All child windows
+    pub fn new(root: XWindow<'a>, parent: XWindow<'a>, children: Vec<XWindow<'a>>) -> Self {
+        Self {
+            root,
+            parent,
+            children,
+        }
+    }
+
+    /// Retrieves the root window
+    pub fn root(&self) -> &XWindow<'a> {
+        &self.root
+    }
+
+    /// Retrieves the parent
+    pub fn parent(&self) -> &XWindow<'a> {
+        &self.parent
+    }
+
+    /// Retrieves the child windows
+    pub fn children(&self) -> &[XWindow<'a>] {
+        &self.children
+    }
+
+    /// Discards all information except the root window
+    pub fn into_root(self) -> XWindow<'a> {
+        self.root
+    }
+
+    /// Discards all information except the parent window
+    pub fn into_parent(self) -> XWindow<'a> {
+        self.parent
+    }
+
+    /// Discards all information except the child windows
+    pub fn into_children(self) -> Vec<XWindow<'a>> {
+        self.children
+    }
+
+    /// Splits the information bundle apart into root, parent and child windows.
+    pub fn split(self) -> (XWindow<'a>, XWindow<'a>, Vec<XWindow<'a>>) {
+        (self.root, self.parent, self.children)
     }
 }
 
