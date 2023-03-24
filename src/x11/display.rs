@@ -48,6 +48,20 @@ impl XDisplay {
             return Err(XLibError::OpenDisplayFailed(attempted_name));
         }
 
+        Ok(unsafe { Self::from_ptr(handle) })
+    }
+
+    /// Constructs an X11 display wrapper from an existing pointer.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The pointer to the X11 display to wrap
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the handle is a valid pointer and
+    /// is not operated on after this method has been called.
+    pub unsafe fn from_ptr(handle: *mut xlib_sys::Display) -> Self {
         let mut xfixes_event_base = 0;
         let mut xfixes_error_base = 0;
 
@@ -71,11 +85,11 @@ impl XDisplay {
             );
         }
 
-        Ok(XDisplay {
+        XDisplay {
             handle,
             xfixes_event_base,
             xinput2_opcode,
-        })
+        }
     }
 
     /// Retrieves the name of the display that [`xlib_sys::XOpenDisplay`] would attempt to use.
