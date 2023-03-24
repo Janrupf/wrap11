@@ -807,194 +807,167 @@ impl<'a> XEventData<'a> {
     ///
     /// The caller must ensure all arguments are valid.
     unsafe fn new_xinput2(mut event: xlib_sys::XEvent, display: &'a XDisplay) -> Self {
-        let event_cookie = &mut event.generic_event_cookie;
+        let cookie = EventCookieGuard::new(display, &mut event);
 
-        xlib_sys::XGetEventData(display.handle(), event_cookie);
-        let event = match event_cookie.evtype {
+        let event = match cookie.event_type() {
             xinput2_sys::XI_DeviceChanged => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceChangedEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIDeviceChanged(converted)
             }
             xinput2_sys::XI_KeyPress => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIKeyPressed(converted)
             }
             xinput2_sys::XI_KeyRelease => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIKeyReleased(converted)
             }
             xinput2_sys::XI_ButtonPress => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIButtonPressed(converted)
             }
             xinput2_sys::XI_ButtonRelease => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIButtonReleased(converted)
             }
             xinput2_sys::XI_TouchBegin => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XITouchBegin(converted)
             }
             xinput2_sys::XI_TouchEnd => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XITouchEnd(converted)
             }
             xinput2_sys::XI_TouchUpdate => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XITouchUpdate(converted)
             }
             xinput2_sys::XI_TouchOwnership => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XITouchOwnershipEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XITouchOwnershipChanged(converted)
             }
             xinput2_sys::XI_Motion => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIDeviceEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIMotion(converted)
             }
             xinput2_sys::XI_HierarchyChanged => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIHierarchyEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIHierarchyChanged(converted)
             }
             xinput2_sys::XI_RawKeyPress => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIRawEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIRawKeyPressed(converted)
             }
             xinput2_sys::XI_RawKeyRelease => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIRawEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIRawKeyReleased(converted)
             }
             xinput2_sys::XI_RawButtonPress => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIRawEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIRawButtonPressed(converted)
             }
             xinput2_sys::XI_RawButtonRelease => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIRawEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIRawButtonReleased(converted)
             }
             xinput2_sys::XI_RawTouchBegin => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIRawEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIRawTouchBegin(converted)
             }
             xinput2_sys::XI_RawTouchEnd => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIRawEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIRawTouchEnd(converted)
             }
             xinput2_sys::XI_RawTouchUpdate => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIRawEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIRawTouchUpdated(converted)
             }
             xinput2_sys::XI_RawMotion => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIRawEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIRawMotion(converted)
             }
             xinput2_sys::XI_BarrierHit => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIBarrierEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIBarrierHit(converted)
             }
             xinput2_sys::XI_BarrierLeave => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIBarrierEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIBarrierLeft(converted)
             }
             xinput2_sys::XI_Enter => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIFocusEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIEntered(converted)
             }
             xinput2_sys::XI_Leave => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIFocusEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XILeft(converted)
             }
             xinput2_sys::XI_FocusIn => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIFocusEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIFocusIn(converted)
             }
             xinput2_sys::XI_FocusOut => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIFocusEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIFocusOut(converted)
             }
             xinput2_sys::XI_PropertyEvent => {
-                let event = *(event_cookie.data as *mut _);
+                let event = *(cookie.data() as *mut _);
                 let converted = XIPropertyEvent::new(event, display);
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
 
                 Self::XIPropertyChanged(converted)
             }
             _ => {
-                xlib_sys::XFreeEventData(display.handle(), event_cookie);
+                drop(cookie);
                 Self::Unknown(event)
             }
         };
@@ -3683,5 +3656,54 @@ impl<'a> XIPropertyEvent<'a> {
     /// Retrieves what happened.
     pub fn what(&self) -> XIPropertyEventChange {
         self.what
+    }
+}
+
+struct EventCookieGuard<'d, 'e> {
+    display: &'d XDisplay,
+    event: &'e mut xlib_sys::XEvent,
+    free_on_drop: bool,
+}
+
+impl<'d, 'e> EventCookieGuard<'d, 'e> {
+    /// Constructs a new event cookie guard and retrieves the event cookie data.
+    ///
+    /// The cookie will be freed automatically íf required when the guard is dropped.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the even is a generic event and belongs to the display.
+    pub unsafe fn new(display: &'d XDisplay, event: &'e mut xlib_sys::XEvent) -> Self {
+        let free_on_drop =
+            xlib_sys::XGetEventData(display.handle(), &mut event.generic_event_cookie) != 0;
+
+        Self {
+            display,
+            event,
+            free_on_drop,
+        }
+    }
+
+    /// Retrieves the event type of the event
+    pub fn event_type(&self) -> std::ffi::c_int {
+        unsafe { self.event.generic_event_cookie.evtype }
+    }
+
+    /// Retrieves the data of the cookie
+    pub fn data(&self) -> *mut std::ffi::c_void {
+        unsafe { self.event.generic_event_cookie.data }
+    }
+}
+
+impl<'d, 'e> Drop for EventCookieGuard<'d, 'e> {
+    fn drop(&mut self) {
+        if self.free_on_drop {
+            unsafe {
+                xlib_sys::XFreeEventData(
+                    self.display.handle(),
+                    &mut self.event.generic_event_cookie,
+                )
+            };
+        }
     }
 }
