@@ -2,7 +2,7 @@ use crate::{
     xcomposite_sys, xfixes_sys, xinput2_sys, xlib_sys, XAtom, XColormap, XCursor, XDisplay,
     XDrawable, XPixmap, XPropertyHolder, XScreen, XServerRegion, XVisual,
 };
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 
 use crate::x11::input::XInputDevice;
 use crate::x11::property::{XPropertyChangeMode, XPropertyData, XPropertyDataFormat};
@@ -716,6 +716,24 @@ impl<'a> XWindow<'a> {
         let parent = unsafe { XWindow::new(parent, self.display, WindowHandleOwnership::Foreign) };
 
         XWindowTreeInfo::new(root, parent, children)
+    }
+
+    /// Retrieves the window name (this is usually what is displayed as its title).
+    pub fn fetch_name(&self) -> Option<String> {
+        let mut name_out = std::ptr::null_mut();
+        let status =
+            unsafe { xlib_sys::XFetchName(self.display.handle(), self.handle, &mut name_out) };
+
+        if status != 0 {
+            let name = unsafe { CStr::from_ptr(name_out) }
+                .to_string_lossy()
+                .to_string();
+            unsafe { xlib_sys::XFree(name_out as _) };
+
+            Some(name)
+        } else {
+            None
+        }
     }
 
     /// Changes a region of this window.
