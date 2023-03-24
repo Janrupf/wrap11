@@ -8,7 +8,7 @@ license = "MIT"
 [dependencies]
 
 [target.'cfg(unix)'.dependencies]
-x11 = { version = "2.19.1", features = ["xlib", "glx", "xrandr", "xcomposite", "xfixes", "xtest"] }
+x11 = { version = "2.19.1", features = ["xlib", "glx", "xrandr", "xcomposite", "xfixes", "xinput", "xtest"] }
 libc = "0.2.140"
 thiserror = "1.0.40"
 bitflags = "2.0.2"
