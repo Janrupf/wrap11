@@ -318,4 +318,28 @@ pub trait XPropertyHolder {
             )
         };
     }
+
+    /// Reads an X11 property completely be automatically determining its length.
+    ///
+    /// # Arguments
+    ///
+    /// * `property` - The X atom identifying the property
+    /// * `delete` - Whether the property should be deleted upon retrieval
+    /// * `ty` - The X atom identifying the property type
+    fn get_property_completely(
+        &self,
+        property: XAtom,
+        delete: bool,
+        ty: XAtom,
+    ) -> Option<XPropertyData> {
+        let (data, remaining) = self.get_property(property, 0, 0, false, ty)?;
+
+        if remaining < 1 {
+            // Short circuit: property has 0 length
+            return Some(data);
+        }
+
+        let (data, _) = self.get_property(property, 0, (remaining / 4) as _, delete, ty)?;
+        Some(data)
+    }
 }
