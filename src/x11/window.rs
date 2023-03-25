@@ -764,6 +764,18 @@ impl<'a> XWindow<'a> {
         }
     }
 
+    /// Changes the parent window of this window.
+    ///
+    /// # Arguments
+    /// * `new_parent` - The new parent window of this window
+    /// * `x` - The x position inside the new parent
+    /// * `y` - The y position inside the new parent
+    pub fn reparent(&self, new_parent: &XWindow, x: i32, y: i32) {
+        unsafe {
+            xlib_sys::XReparentWindow(self.display.handle(), self.handle, new_parent.handle, x, y)
+        };
+    }
+
     /// Clones this window into a foreign window handle.
     pub fn foreign_clone(&self) -> XWindow<'a> {
         unsafe { XWindow::new(self.handle, self.display, WindowHandleOwnership::Foreign) }
