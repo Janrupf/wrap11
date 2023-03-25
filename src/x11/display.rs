@@ -15,11 +15,22 @@ pub enum QueuedMode {
     AfterFlush = 2,
 }
 
+/// Describes how a display handle is owned.
+#[derive(Debug, Eq, PartialEq)]
+pub enum DisplayOwnership {
+    /// The display handle is our own handle
+    Owned,
+
+    /// The display handle is owned by something else
+    Foreign,
+}
+
 /// The heart of an X11 connection.
 ///
 /// In the context of XLib this represents a connection to the X11 server.
 #[derive(Debug)]
 pub struct XDisplay {
+    ownership: DisplayOwnership,
     handle: *mut xlib_sys::Display,
     xfixes_event_base: i32,
     xinput2_opcode: i32,
@@ -48,7 +59,7 @@ impl XDisplay {
             return Err(XLibError::OpenDisplayFailed(attempted_name));
         }
 
-        Ok(unsafe { Self::from_ptr(handle) })
+        Ok(unsafe { Self::from_ptr(handle, DisplayOwnership::Owned) })
     }
 
     /// Constructs an X11 display wrapper from an existing pointer.
@@ -61,7 +72,7 @@ impl XDisplay {
     ///
     /// The caller must ensure that the handle is a valid pointer and
     /// is not operated on after this method has been called.
-    pub unsafe fn from_ptr(handle: *mut xlib_sys::Display) -> Self {
+    pub unsafe fn from_ptr(handle: *mut xlib_sys::Display, ownership: DisplayOwnership) -> Self {
         let mut xfixes_event_base = 0;
         let mut xfixes_error_base = 0;
 
@@ -86,6 +97,7 @@ impl XDisplay {
         }
 
         XDisplay {
+            ownership,
             handle,
             xfixes_event_base,
             xinput2_opcode,
@@ -454,7 +466,9 @@ impl XDisplay {
 
 impl Drop for XDisplay {
     fn drop(&mut self) {
-        unsafe { xlib_sys::XCloseDisplay(self.handle) };
+        if self.ownership == DisplayOwnership::Owned {
+            unsafe { xlib_sys::XCloseDisplay(self.handle) };
+        }
     }
 }
 
