@@ -7,6 +7,7 @@ use std::ffi::{CStr, CString};
 use crate::x11::input::XInputDevice;
 use crate::x11::property::{XPropertyChangeMode, XPropertyData, XPropertyDataFormat};
 use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 use std::mem::MaybeUninit;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -858,6 +859,21 @@ impl<'a> XDrawable<'a> for XWindow<'a> {
 
     fn display(&self) -> &'a XDisplay {
         self.display
+    }
+}
+
+impl<'a> PartialEq for XWindow<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.handle == other.handle && self.display.handle() == other.display.handle()
+    }
+}
+
+impl<'a> Eq for XWindow<'a> {}
+
+impl<'a> Hash for XWindow<'a> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.handle.hash(state);
+        self.display.handle().hash(state);
     }
 }
 
