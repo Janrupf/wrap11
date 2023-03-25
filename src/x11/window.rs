@@ -762,6 +762,11 @@ impl<'a> XWindow<'a> {
             );
         }
     }
+
+    /// Clones this window into a foreign window handle.
+    pub fn foreign_clone(&self) -> XWindow<'a> {
+        unsafe { XWindow::new(self.handle, self.display, WindowHandleOwnership::Foreign) }
+    }
 }
 
 impl<'a> XPropertyHolder for XWindow<'a> {
