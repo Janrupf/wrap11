@@ -515,6 +515,16 @@ impl<'a> XWindow<'a> {
         unsafe { xlib_sys::XUnmapWindow(self.display.handle(), self.handle) };
     }
 
+    /// Moves the window to the specified position.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x coordinate to move the window to
+    /// * `y` - The y coordinate to move the window to
+    pub fn move_to(&self, x: i32, y: i32) {
+        unsafe { xlib_sys::XMoveWindow(self.display.handle(), self.handle, x, y) };
+    }
+
     /// Selects the input mask for the window
     pub fn select_input(&self, mask: WindowInputMask) {
         unsafe { xlib_sys::XSelectInput(self.display.handle(), self.handle, mask.bits()) };
