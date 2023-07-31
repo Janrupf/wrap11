@@ -1,8 +1,8 @@
 use crate::ext::edid::MonitorDescriptor;
 use crate::{
-    xcomposite_sys, xfixes_sys, xlib_sys, xrandr_sys, ColormapAllocation, ColormapHandleOwnership,
-    SetWindowAttributes, WindowClass, WindowHandleOwnership, XAtom, XColormap, XRectangle,
-    XServerRegion, XVisual, XVisualInfo,
+    xcomposite_sys, xlib_sys, xrandr_sys, ColormapAllocation, ColormapHandleOwnership,
+    SetWindowAttributes, WindowClass, WindowHandleOwnership, XAtom, XColormap, XVisual,
+    XVisualInfo,
 };
 use crate::{XDisplay, XWindow};
 use std::io::Cursor;
@@ -359,32 +359,5 @@ impl<'a> XScreen<'a> {
         }
 
         out
-    }
-
-    /// Creates a new region.
-    ///
-    /// # Arguments
-    ///
-    /// * `rectangles` - The rectangles to compose the region of
-    pub fn create_region(&self, rectangles: &[XRectangle]) -> XServerRegion {
-        let mut rectangles = rectangles
-            .iter()
-            .map(|r| xlib_sys::XRectangle {
-                x: r.x,
-                y: r.y,
-                width: r.width,
-                height: r.height,
-            })
-            .collect::<Vec<_>>();
-
-        unsafe {
-            let region = xfixes_sys::XFixesCreateRegion(
-                self.display.handle(),
-                rectangles.as_mut_ptr(),
-                rectangles.len() as _,
-            );
-
-            XServerRegion::new(region, self.display)
-        }
     }
 }

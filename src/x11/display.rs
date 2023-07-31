@@ -1,6 +1,6 @@
 use crate::{
-    xfixes_sys, xlib_sys, xtest_sys, XBitmapPadding, XCursorImage, XEvent, XFont, XImage,
-    XImageFormat, XVisual, XWindow,
+    xfixes_sys, xlib_sys, xtest_sys, WindowShapeKind, XBitmapPadding, XCursorImage, XDrawable,
+    XEvent, XFont, XImage, XImageFormat, XPixmap, XRectangle, XServerRegion, XVisual, XWindow, XGC,
 };
 use crate::{XAtom, XLibError, XScreen};
 use std::ffi::{CStr, CString};
@@ -451,6 +451,78 @@ impl XDisplay {
         debug_assert!(max_supported >= min_supported && max_supported <= 255);
 
         (min_supported as _, max_supported as _)
+    }
+
+    /// Creates a new region.
+    ///
+    /// # Arguments
+    ///
+    /// * `rectangles` - The rectangles to compose the region of
+    pub fn create_region(&self, rectangles: &[XRectangle]) -> XServerRegion {
+        let mut rectangles = rectangles
+            .iter()
+            .map(|r| xlib_sys::XRectangle {
+                x: r.x,
+                y: r.y,
+                width: r.width,
+                height: r.height,
+            })
+            .collect::<Vec<_>>();
+
+        unsafe {
+            let region = xfixes_sys::XFixesCreateRegion(
+                self.handle,
+                rectangles.as_mut_ptr(),
+                rectangles.len() as _,
+            );
+
+            XServerRegion::new(region, self)
+        }
+    }
+
+    /// Creates a new region from a bitmap.
+    ///
+    /// # Arguments
+    ///
+    /// * `bitmap` - The bitmap to create the region from
+    pub fn create_region_from_bitmap(&self, bitmap: &XPixmap) -> XServerRegion {
+        unsafe {
+            let region = xfixes_sys::XFixesCreateRegionFromBitmap(self.handle, bitmap.handle());
+
+            XServerRegion::new(region, self)
+        }
+    }
+
+    /// Creates a new region from a window.
+    ///
+    /// # Arguments
+    ///
+    /// * `window` - The window to create the region from
+    /// * `kind` - The kind of shape to create the region from
+    pub fn create_region_from_window(
+        &self,
+        window: &XWindow,
+        kind: WindowShapeKind,
+    ) -> XServerRegion {
+        unsafe {
+            let region =
+                xfixes_sys::XFixesCreateRegionFromWindow(self.handle, window.handle(), kind as _);
+
+            XServerRegion::new(region, self)
+        }
+    }
+
+    /// Creates a new region from a gc.
+    ///
+    /// # Arguments
+    ///
+    /// * `gc` - The gc to create the region from
+    pub fn create_region_from_gc<'a, T: XDrawable<'a>>(&self, gc: &XGC<'a, T>) -> XServerRegion {
+        unsafe {
+            let region = xfixes_sys::XFixesCreateRegionFromGC(self.handle, gc.handle());
+
+            XServerRegion::new(region, self)
+        }
     }
 
     /// Retrieves the event base id for xfixes events.
