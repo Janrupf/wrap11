@@ -1,4 +1,5 @@
 use crate::{xlib_sys, XAtom};
+use std::ops::Deref;
 
 /// Describes the possible format of a X11 property.
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -112,6 +113,11 @@ impl<'a> XPropertyData<'a> {
         self.format.byte_count_array(self.item_count)
     }
 
+    /// Retrieves the data as a slice.
+    pub fn as_slice(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self.data, self.byte_size()) }
+    }
+
     /// Interprets the data as a pointer of a specific type.
     ///
     /// # Panics
@@ -158,6 +164,20 @@ impl<'a> XPropertyData<'a> {
     /// It is up to the caller to ensure that the underlying data is valid for the requested type.
     pub unsafe fn get_as_mut_ref<T>(&mut self) -> &mut T {
         &mut *self.get_as_mut_ptr::<T>()
+    }
+}
+
+impl<'a> Deref for XPropertyData<'a> {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        self.as_slice()
+    }
+}
+
+impl<'a> AsRef<[u8]> for XPropertyData<'a> {
+    fn as_ref(&self) -> &[u8] {
+        self.as_slice()
     }
 }
 
