@@ -248,7 +248,7 @@ impl<'a> XScreen<'a> {
         class: WindowClass,
         visual: &'creation XVisual<'a>,
         attributes: SetWindowAttributes<'creation, 'a>,
-    ) -> XWindow {
+    ) -> XWindow<'a> {
         self.root_window().create_child_window(
             x,
             y,
